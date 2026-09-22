@@ -9,7 +9,7 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.0"
-    CURRENT_PROJECT_VERSION: "5"
+    CURRENT_PROJECT_VERSION: "7"
     DEVELOPMENT_TEAM: ""
 
 targets:
@@ -23,11 +23,21 @@ targets:
         excludes:
           - Web
           - Assets.xcassets
+          - LegacyIcons
           - Info.plist
 
     resources:
       - path: App/Web/index.html
       - path: App/Assets.xcassets
+      - path: App/LegacyIcons/Icon-60@2x.png
+      - path: App/LegacyIcons/Icon-60@3x.png
+      - path: App/LegacyIcons/Icon-76.png
+      - path: App/LegacyIcons/Icon-76@2x.png
+      - path: App/LegacyIcons/Icon-83.5@2x.png
+      - path: App/LegacyIcons/Icon-Small-40.png
+      - path: App/LegacyIcons/Icon-Small-40@2x.png
+      - path: App/LegacyIcons/Icon-Small.png
+      - path: App/LegacyIcons/Icon-Small@2x.png
 
     settings:
       base:

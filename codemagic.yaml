@@ -21,16 +21,10 @@ workflows:
         script: |
           set -e
           cd "$CM_BUILD_DIR"
-
           plutil -lint App/Info.plist
-
-          ICON_NAME=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIconName" App/Info.plist 2>/dev/null || true)
-          echo "Source CFBundleIconName = ${ICON_NAME:-<missing>}"
-
-          test -f App/Assets.xcassets/AppIcon.appiconset/Contents.json
-          test -f App/Assets.xcassets/AppIcon.appiconset/AppIcon-120.png
           test -f App/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
-
+          test -f App/LegacyIcons/Icon-60@2x.png
+          test -f App/LegacyIcons/Icon-76@2x.png
           echo "Source configuration verification passed."
 
       - name: Install XcodeGen
@@ -57,57 +51,55 @@ workflows:
             --project "$XCODE_PROJECT" \
             --scheme "$XCODE_SCHEME"
 
-      - name: Inspect packaged app
+      - name: Verify packaged icons and plist
         script: |
           set -e
-
           IPA=$(find "$CM_BUILD_DIR/build/ios/ipa" -name "*.ipa" -print -quit)
-          if [ -z "$IPA" ]; then
-            echo "ERROR: IPA not found"
-            exit 1
-          fi
+          test -n "$IPA"
 
           rm -rf /tmp/loris_voice_ipa
           mkdir -p /tmp/loris_voice_ipa
           unzip -q "$IPA" -d /tmp/loris_voice_ipa
 
           APP=$(find /tmp/loris_voice_ipa/Payload -maxdepth 1 -name "*.app" -print -quit)
-          if [ -z "$APP" ]; then
-            echo "ERROR: App bundle not found in IPA"
-            exit 1
-          fi
-
+          test -n "$APP"
           PLIST="$APP/Info.plist"
-          echo "Inspecting packaged Info.plist at $PLIST"
 
-          TOP_ICON=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "$PLIST" 2>/dev/null || true)
-          PRIMARY_ICON=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName" "$PLIST" 2>/dev/null || true)
-          IPAD_PRIMARY_ICON=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIcons~ipad:CFBundlePrimaryIcon:CFBundleIconName" "$PLIST" 2>/dev/null || true)
+          echo "Packaged app: $APP"
+          echo "CFBundleIconName: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconName' "$PLIST")"
+          echo "iPad primary icon files:"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIcons~ipad:CFBundlePrimaryIcon:CFBundleIconFiles' "$PLIST"
 
-          echo "Top-level CFBundleIconName = ${TOP_ICON:-<missing>}"
-          echo "CFBundleIcons primary icon name = ${PRIMARY_ICON:-<missing>}"
-          echo "CFBundleIcons~ipad primary icon name = ${IPAD_PRIMARY_ICON:-<missing>}"
+          test -f "$APP/Icon-60@2x.png"
+          test -f "$APP/Icon-60@3x.png"
+          test -f "$APP/Icon-76.png"
+          test -f "$APP/Icon-76@2x.png"
+          test -f "$APP/Icon-83.5@2x.png"
 
-          ORIENTATIONS=$(/usr/libexec/PlistBuddy -c "Print :UISupportedInterfaceOrientations~ipad" "$PLIST" 2>/dev/null | grep -c "UIInterfaceOrientation" || true)
-          echo "iPad orientation entries = $ORIENTATIONS"
+          W120=$(sips -g pixelWidth "$APP/Icon-60@2x.png" | awk '/pixelWidth/{print $2}')
+          H120=$(sips -g pixelHeight "$APP/Icon-60@2x.png" | awk '/pixelHeight/{print $2}')
+          W152=$(sips -g pixelWidth "$APP/Icon-76@2x.png" | awk '/pixelWidth/{print $2}')
+          H152=$(sips -g pixelHeight "$APP/Icon-76@2x.png" | awk '/pixelHeight/{print $2}')
+
+          echo "Icon-60@2x.png = ${W120}x${H120}"
+          echo "Icon-76@2x.png = ${W152}x${H152}"
+          test "$W120" = "120"
+          test "$H120" = "120"
+          test "$W152" = "152"
+          test "$H152" = "152"
 
           if [ -f "$APP/Assets.car" ]; then
             echo "Assets.car is present."
-            if command -v assetutil >/dev/null 2>&1; then
-              assetutil --info "$APP/Assets.car" > /tmp/loris_assets.json 2>/dev/null || true
-              echo "Asset catalog inspection generated at /tmp/loris_assets.json"
-              grep -E 'AppIcon|120|152|180|1024' /tmp/loris_assets.json | head -40 || true
-            fi
           else
-            echo "WARNING: Assets.car is missing. Apple may reject the icon catalog."
+            echo "ERROR: Assets.car is missing."
+            exit 1
           fi
 
-          echo "Packaged app inspection complete. Publishing will continue so App Store Connect can perform authoritative validation."
+          echo "Packaged icon verification passed."
 
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
-      - /tmp/loris_assets.json
 
     publishing:
       app_store_connect:
