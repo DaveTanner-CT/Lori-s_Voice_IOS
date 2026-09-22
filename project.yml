@@ -3,28 +3,61 @@ options:
   bundleIdPrefix: org.scriptingforschools
   deploymentTarget:
     iOS: "16.0"
+
 settings:
   base:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.0"
-    CURRENT_PROJECT_VERSION: "1"
+    CURRENT_PROJECT_VERSION: "2"
     DEVELOPMENT_TEAM: ""
+
 targets:
   LorisVoice:
     type: application
     platform: iOS
     deploymentTarget: "16.0"
+
     sources:
       - path: App
         excludes:
           - Web
           - Assets.xcassets
           - Info.plist
+
     resources:
       - path: App/Web/index.html
       - path: App/Assets.xcassets
+
     info:
       path: App/Info.plist
+      properties:
+        CFBundleDisplayName: "Lori's Voice"
+
+        ITSAppUsesNonExemptEncryption: false
+
+        LSRequiresIPhoneOS: true
+
+        NSPhotoLibraryUsageDescription: "Lori's Voice lets you choose a photo to use on a communication tile."
+
+        UIApplicationSupportsIndirectInputEvents: true
+
+        UILaunchScreen: {}
+
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+
+        "UISupportedInterfaceOrientations~ipad":
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.scriptingforschools.LorisVoice
@@ -34,5 +67,6 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: NO
+
     scheme:
       gatherCoverageData: false
