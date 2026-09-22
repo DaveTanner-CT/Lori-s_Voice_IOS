@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Lori's Voice</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Lori's Voice">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  :root{
+    --canvas:#f3efe7;        /* warm, calm paper */
+    --ink:#2b2a28;
+    --muted:#7c766b;
+    --line:#e2dccf;
+    --banner:#34322d;
+    --accent:#3b7d6e;        /* calm teal-green for UI chrome */
+    --radius:26px;
+    --shadow:0 8px 20px rgba(40,36,28,.10);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:"Nunito","Segoe UI",system-ui,sans-serif;
+    background:var(--canvas);
+    color:var(--ink);
+    overflow:hidden;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  #app{display:flex;flex-direction:column;height:100%;}
+
+  /* ---- speaking banner (the signature element) ---- */
+  #banner{
+    flex:0 0 auto;
+    min-height:64px;
+    margin:10px 14px 0;
+    border-radius:18px;
+    background:var(--banner);
+    color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    padding:10px 22px;
+    font-size:clamp(20px,4.2vw,40px);
+    font-weight:800;
+    letter-spacing:.2px;
+    text-align:center;
+    opacity:.35;
+    transition:opacity .18s ease, transform .18s ease;
+    transform:scale(.995);
+    cursor:pointer;
+  }
+  #banner.active{opacity:1;transform:scale(1);}
+  #banner.greet{opacity:1;transform:scale(1);font-weight:700;}
+  #banner .hint{font-size:17px;font-weight:700;color:#cfc9bb;}
+
+  /* ---- top controls ---- */
+  #bar{
+    flex:0 0 auto;
+    display:flex;align-items:center;gap:10px;
+    padding:10px 16px 4px;
+  }
+  #title{font-size:18px;font-weight:800;color:var(--muted);letter-spacing:.4px;flex:0 1 auto;min-width:0;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .iconbtn{
+    border:none;background:#fff;border:1px solid var(--line);
+    width:46px;height:46px;border-radius:14px;font-size:20px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    box-shadow:0 2px 4px rgba(0,0,0,.04);color:var(--ink);flex:0 0 auto;
+  }
+  .iconbtn:active{transform:scale(.94);}
+  .iconbtn.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .admin-only{display:none;}
+  body.admin .admin-only{display:flex;}
+
+  /* ---- keyboard button in the top bar (always visible) ---- */
+  .bar-spacer{flex:1 1 auto;}
+  #kbBtn{
+    display:flex;align-items:center;gap:9px;border:none;background:var(--accent);color:#fff;
+    height:54px;padding:0 20px;border-radius:16px;cursor:pointer;flex:0 0 auto;
+    box-shadow:0 3px 8px rgba(59,125,110,.30);font-family:inherit;
+  }
+  #kbBtn:active{transform:scale(.96);}
+  #kbBtn .kbico{font-size:30px;line-height:1;}
+  #kbBtn .kblabel{font-size:21px;font-weight:800;letter-spacing:.3px;}
+  @media (max-width:420px){ #kbBtn .kblabel{display:none;} #kbBtn{padding:0 16px;} }
+
+  /* ---- board area ---- */
+  #stage{flex:1 1 auto;position:relative;display:flex;flex-direction:column;
+    padding:6px 14px 4px;min-height:0;}
+  #crumb{flex:0 0 auto;height:38px;display:flex;align-items:center;gap:10px;}
+  #back{display:none;align-items:center;gap:7px;background:none;border:none;
+    font:inherit;font-weight:800;font-size:20px;color:var(--accent);cursor:pointer;padding:8px 10px;}
+  #back.show{display:flex;}
+  #crumbLabel{font-weight:800;color:var(--muted);font-size:16px;}
+
+  #grid{
+    flex:1 1 auto;display:grid;gap:14px;min-height:0;
+    grid-template-columns:repeat(3,1fr);
+    grid-template-rows:repeat(2,1fr);
+  }
+  @media (max-width:760px){ #grid{grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(3,1fr);} }
+  #grid.s4{grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);}
+  @media (max-width:760px){ #grid.s4{grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);} }
+
+  .tile{
+    position:relative;border:none;border-radius:var(--radius);
+    box-shadow:var(--shadow);cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:6px;padding:10px;color:#fff;overflow:hidden;
+    transition:transform .08s ease, box-shadow .15s ease;
+    font-family:inherit;
+  }
+  .tile:active{transform:scale(.96);}
+  .tile.speaking{animation:pulse .9s ease;}
+  @keyframes pulse{
+    0%{box-shadow:var(--shadow);}
+    25%{box-shadow:0 0 0 6px rgba(255,255,255,.55), var(--shadow);}
+    100%{box-shadow:var(--shadow);}
+  }
+  .tile .emoji{font-size:clamp(40px,9vw,86px);line-height:1;}
+  .tile .label{font-size:clamp(24px,4.8vw,44px);font-weight:800;text-align:center;
+    line-height:1.05;text-shadow:0 1px 2px rgba(0,0,0,.18);}
+  .tile .fork-dot{position:absolute;top:12px;right:14px;font-size:15px;font-weight:900;
+    background:rgba(255,255,255,.85);color:#2b2a28;border-radius:999px;
+    min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;padding:0 7px;}
+  .tile .edit-pencil{position:absolute;top:10px;left:12px;font-size:18px;
+    background:rgba(255,255,255,.9);width:32px;height:32px;border-radius:10px;
+    display:none;align-items:center;justify-content:center;}
+  body.admin .tile .edit-pencil{display:flex;}
+  body.admin .tile{cursor:default;touch-action:none;}
+  .tile.back-tile{background:#fff !important;color:var(--ink) !important;border:2px solid var(--line);}
+  .tile.back-tile .emoji{color:var(--accent);}
+  .tile.back-tile .label{text-shadow:none;color:var(--ink);}
+  .tile.drag-src{opacity:.30;}
+  .tile.drag-over{outline:5px solid rgba(255,255,255,.95);outline-offset:-5px;}
+  .tile.drag-clone{position:fixed;z-index:200;pointer-events:none;opacity:.93;
+    transform:scale(1.05);box-shadow:0 18px 40px rgba(0,0,0,.34);margin:0;}
+
+  .tile.add{background:#fff !important;border:2.5px dashed var(--line);color:var(--muted);
+    box-shadow:none;display:none;}
+  body.admin .tile.add{display:flex;}
+  .tile.add .emoji{font-size:54px;}
+  .tile.add .label{color:var(--muted);text-shadow:none;}
+
+  /* ---- pager ---- */
+  #pager{flex:0 0 auto;height:34px;display:flex;align-items:center;justify-content:center;gap:10px;}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--line);transition:all .2s;}
+  .dot.on{background:var(--accent);width:26px;border-radius:6px;}
+  .arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:5;
+    width:58px;height:58px;border-radius:50%;background:#fff;border:1px solid var(--line);
+    box-shadow:var(--shadow);font-size:26px;display:none;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);}
+  .arrow:active{transform:translateY(-50%) scale(.92);}
+  .arrow.show{display:flex;}
+  #arrowL{left:18px;} #arrowR{right:18px;}
+
+  /* ---- modal ---- */
+  .scrim{position:fixed;inset:0;background:rgba(30,27,22,.55);display:none;
+    align-items:center;justify-content:center;padding:18px;z-index:50;}
+  .scrim.show{display:flex;}
+  .sheet{background:#fff;border-radius:24px;width:100%;max-width:480px;max-height:92vh;
+    overflow:auto;padding:22px;box-shadow:0 24px 60px rgba(0,0,0,.3);}
+  .sheet h2{margin:0 0 14px;font-size:21px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-weight:800;font-size:14px;margin-bottom:6px;color:var(--muted);}
+  .field input[type=text]{width:100%;font:inherit;font-size:17px;padding:11px 13px;
+    border:1.5px solid var(--line);border-radius:12px;background:#faf8f3;}
+  .field input:focus{outline:none;border-color:var(--accent);}
+  .picks{display:flex;flex-wrap:wrap;gap:7px;}
+  .pick{font-size:24px;width:42px;height:42px;border:1.5px solid var(--line);border-radius:10px;
+    background:#faf8f3;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .pick:active{transform:scale(.9);}
+  .swatches{display:flex;flex-wrap:wrap;gap:8px;}
+  .sw{width:38px;height:38px;border-radius:50%;cursor:pointer;border:3px solid transparent;}
+  .sw.sel{border-color:var(--ink);}
+  .forklist{display:flex;flex-direction:column;gap:8px;margin-top:4px;}
+  .forkrow{display:flex;align-items:center;gap:10px;border:1px solid var(--line);
+    border-radius:12px;padding:8px 10px;background:#faf8f3;}
+  .forkrow .fe{font-size:24px;}
+  .forkrow .fl{flex:1;font-weight:700;}
+  .forkrow button{border:none;background:none;font-size:18px;cursor:pointer;padding:6px;}
+  .row-actions{display:flex;gap:10px;margin-top:6px;}
+  .btn{flex:1;font:inherit;font-weight:800;font-size:16px;padding:13px;border-radius:14px;
+    border:none;cursor:pointer;}
+  .btn.primary{background:var(--accent);color:#fff;}
+  .btn.ghost{background:#f0ece4;color:var(--ink);}
+  .btn.danger{background:#fff;color:#c0392b;border:1.5px solid #e8c4be;}
+  .btn:active{transform:scale(.97);}
+  .menu-item{width:100%;text-align:left;font:inherit;font-size:16px;font-weight:700;
+    padding:14px;border:none;background:#faf8f3;border-radius:12px;margin-bottom:8px;cursor:pointer;}
+  .hintline{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.4;}
+
+  /* ---- pin keypad ---- */
+  .pindots{display:flex;justify-content:center;gap:16px;margin:4px 0 20px;height:18px;}
+  .pindots .pd{width:15px;height:15px;border-radius:50%;border:2px solid var(--accent);}
+  .pindots .pd.f{background:var(--accent);}
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;}
+  .key{font:inherit;font-size:26px;font-weight:800;padding:18px 0;border-radius:14px;
+    border:1.5px solid var(--line);background:#faf8f3;cursor:pointer;color:var(--ink);}
+  .key:active{transform:scale(.95);background:#efeae1;}
+  .key.blank{visibility:hidden;border:none;background:none;}
+  .shake{animation:shake .42s;}
+  @keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-9px);}60%{transform:translateX(9px);}}
+
+  /* ---- full-screen typing keyboard ---- */
+  #kbScreen{position:fixed;inset:0;z-index:60;background:var(--canvas);
+    display:none;flex-direction:column;padding:10px 12px 12px;}
+  #kbScreen.show{display:flex;}
+  #kbTop{flex:0 0 auto;display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+  #kbClose{border:none;background:#fff;border:1px solid var(--line);border-radius:14px;
+    font:inherit;font-weight:800;font-size:20px;color:var(--accent);padding:11px 16px;cursor:pointer;
+    box-shadow:0 2px 4px rgba(0,0,0,.04);}
+  #kbClose:active{transform:scale(.96);}
+  #kbTitle{font-weight:800;color:var(--muted);font-size:18px;}
+  #kbText{flex:0 0 auto;min-height:90px;max-height:26vh;overflow-y:auto;background:#fff;
+    border:1px solid var(--line);border-radius:18px;padding:16px 20px;margin-bottom:10px;
+    font-size:clamp(28px,5.2vw,46px);font-weight:800;color:var(--ink);line-height:1.15;cursor:pointer;
+    word-break:break-word;}
+  #kbText .ph{color:var(--muted);font-weight:700;}
+  #kbSpeak{flex:0 0 auto;height:66px;margin-bottom:12px;border:none;border-radius:16px;
+    background:var(--accent);color:#fff;font-family:inherit;font-size:26px;font-weight:800;cursor:pointer;
+    box-shadow:0 4px 10px rgba(59,125,110,.32);}
+  #kbSpeak:active{transform:scale(.98);}
+  #kbKeys{flex:1 1 auto;display:flex;flex-direction:column;gap:9px;min-height:0;}
+  .kbrow{flex:1 1 0;display:flex;gap:9px;min-height:0;}
+  .kbkey{flex:1 1 0;border:1px solid var(--line);background:#fff;border-radius:14px;
+    font-family:inherit;font-size:clamp(20px,3.8vw,34px);font-weight:800;color:var(--ink);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,.05);padding:0;}
+  .kbkey:active{transform:scale(.95);background:#efeae1;}
+  .kbkey.action{background:#f0ece4;font-size:clamp(16px,2.8vw,24px);}
+  .kbkey.wide{flex:1.6 1 0;}
+  .kbkey.space{flex:4 1 0;font-size:clamp(15px,2.6vw,22px);color:var(--muted);}
+.helpsec{font-size:14.5px;line-height:1.5;color:#3a382f;margin-bottom:12px;}
+  .helpsec b{color:var(--ink);}
+  .info-footer{border-top:1px solid var(--line);margin-top:4px;padding-top:14px;}
+  .info-footer .credit{font-size:13px;color:var(--muted);line-height:1.55;}
+  .info-footer .credit a{color:var(--accent);font-weight:700;text-decoration:none;}
+  .info-footer .credit a:hover{text-decoration:underline;}
+  .linklike{background:none;border:none;color:var(--accent);font:inherit;font-weight:800;font-size:15px;cursor:pointer;padding:8px 0 0;text-decoration:underline;}
+  .tile-img{width:clamp(52px,15vw,110px);height:clamp(52px,15vw,110px);object-fit:cover;border-radius:16px;box-shadow:0 2px 6px rgba(0,0,0,.22);}
+  #tilePhotoPreview{max-width:120px;max-height:120px;object-fit:cover;border-radius:12px;border:1px solid var(--line);display:block;margin-bottom:8px;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="banner"><span class="hint">Tap a tile to talk</span></div>
+
+  <div id="bar">
+    <div id="title">TalkBoard</div>
+    <button id="kbBtn" title="Type to talk"><span class="kbico">⌨️</span><span class="kblabel">Type</span></button>
+    <div class="bar-spacer"></div>
+    <button class="iconbtn admin-only" id="addPrimary" title="Add tile">＋</button>
+    <button class="iconbtn admin-only" id="menuBtn" title="Settings">⚙️</button>
+    <button class="iconbtn" id="infoBtn" title="Help & info">ℹ️</button>
+    <button class="iconbtn" id="lockBtn" title="Edit mode">🔓</button>
+  </div>
+
+  <div id="stage">
+    <div id="crumb">
+      <button id="back">‹ Back</button>
+      <span id="crumbLabel"></span>
+    </div>
+    <div id="grid"></div>
+    <button class="arrow" id="arrowL">‹</button>
+    <button class="arrow" id="arrowR">›</button>
+    <div id="pager"></div>
+  </div>
+</div>
+
+<!-- Tile editor -->
+<div class="scrim" id="editScrim">
+  <div class="sheet">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+      <button id="editBack" style="display:none;background:none;border:none;font:inherit;font-weight:800;font-size:20px;color:var(--accent);cursor:pointer;padding:4px 6px;">‹</button>
+      <h2 id="editTitle" style="margin:0;">Edit tile</h2>
+    </div>
+    <div class="field">
+      <label>Symbol</label>
+      <div class="picks" id="emojiPicks"></div>
+      <input type="text" id="fEmoji" maxlength="4" placeholder="or paste any emoji" style="margin-top:8px;width:120px;text-align:center;font-size:24px;">
+    </div>
+    <div class="field">
+      <label>Photo (optional)</label>
+      <div id="tilePhotoWrap" style="display:none;">
+        <img id="tilePhotoPreview" src="" alt="">
+        <button class="btn ghost" id="tilePhotoRemove" style="width:auto;padding:8px 14px;">Remove photo</button>
+      </div>
+      <input type="file" id="tilePhotoInput" accept="image/*">
+      <div class="hintline">Use a photo — like a loved one's face — instead of the symbol on this tile. It's saved on this device only.</div>
+    </div>
+    <div class="field">
+      <label>Word on the tile</label>
+      <input type="text" id="fLabel" placeholder="e.g. Hungry">
+    </div>
+    <div class="field">
+      <label>Says out loud when tapped</label>
+      <input type="text" id="fSpeak" placeholder="defaults to the word above">
+      <div class="hintline">Tip: the tile can show a short word but speak a full sentence — e.g. shows “Hungry”, says “I’m hungry.”</div>
+    </div>
+    <div class="field">
+      <label>Color</label>
+      <div class="swatches" id="swatches"></div>
+    </div>
+    <div class="field">
+      <label>Position</label>
+      <div style="display:flex;gap:8px;">
+        <button class="btn ghost" id="moveFront" style="flex:1;">⤒ First</button>
+        <button class="btn ghost" id="moveUp" style="flex:1;">‹ Earlier</button>
+        <button class="btn ghost" id="moveDown" style="flex:1;">Later ›</button>
+      </div>
+      <div class="hintline">Move this tile within its group — works across pages too.</div>
+    </div>
+    <div class="field" id="forkField">
+      <label>Sub-tiles (open when this tile is tapped)</label>
+      <div class="forklist" id="forkList"></div>
+      <button class="btn ghost" id="addFork" style="margin-top:10px;">＋ Add a sub-tile</button>
+      <div class="hintline">Example: under “Hungry”, add the foods this person likes.</div>
+    </div>
+    <div class="row-actions">
+      <button class="btn danger" id="delTile">Delete</button>
+      <button class="btn primary" id="doneTile">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings menu -->
+<div class="scrim" id="menuScrim">
+  <div class="sheet" style="max-width:380px;">
+    <h2>Settings</h2>
+    <div class="field">
+      <label>Board name</label>
+      <input type="text" id="fTitle">
+    </div>
+    <div class="field">
+      <label>Name for the hello message</label>
+      <input type="text" id="fOwner" placeholder="e.g. Lori">
+      <div class="hintline">Shown in the greeting, e.g. “Good morning, Lori 💗”.</div>
+    </div>
+    <div class="field">
+      <label>Color theme</label>
+      <div class="swatches" id="themeSwatches"></div>
+      <div class="hintline">Sets the app’s accent color — buttons, the keyboard, highlights. Tiles keep their own colors.</div>
+    </div>
+    <div class="field">
+      <label>Tiles per page</label>
+      <div style="display:flex;gap:10px;">
+        <button class="btn ghost" id="size6" style="flex:1;">6 tiles</button>
+        <button class="btn ghost" id="size4" style="flex:1;">4 bigger</button>
+      </div>
+      <div class="hintline">Fewer, bigger tiles are easier to hit on harder days.</div>
+    </div>
+    <div class="field">
+      <label>Voice</label>
+      <select id="voiceSel" style="width:100%;font:inherit;font-size:16px;padding:11px;border:1.5px solid var(--line);border-radius:12px;background:#faf8f3;"></select>
+      <button class="btn ghost" id="voiceTest" style="margin-top:10px;width:100%;">▶︎ Test this voice</button>
+      <div class="hintline">For a natural voice on iPad, first download an “Enhanced” female voice in iPad Settings → Accessibility → Spoken Content → Voices, then choose it here.</div>
+    </div>
+    <div class="field">
+      <label>Speaking speed</label>
+      <div style="display:flex;gap:10px;">
+        <button class="btn ghost" id="spdSlow" style="flex:1;">Slower</button>
+        <button class="btn ghost" id="spdNorm" style="flex:1;">Normal</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Edit PIN (4 digits)</label>
+      <input type="text" id="fPin" inputmode="numeric" maxlength="4" placeholder="1234" style="width:120px;text-align:center;letter-spacing:4px;font-size:18px;">
+      <div class="hintline">The code needed to enter edit mode. Change it to personalize this device.</div>
+    </div>
+    <button class="menu-item" id="exportBtn">⬇️  Save board to a file (backup)</button>
+    <button class="menu-item" id="importBtn">⬆️  Load board from a file</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none;">
+    <button class="menu-item" id="resetBtn" style="color:#c0392b;">↺  Reset to the starter board</button>
+    <button class="btn ghost" id="closeMenu" style="margin-top:6px;">Close</button>
+  </div>
+</div>
+
+<!-- Help & info -->
+<div class="scrim" id="infoScrim">
+  <div class="sheet">
+    <h2>Help &amp; Info</h2>
+    <div class="helpsec"><b>Talking:</b> Tap any tile to say it out loud. A tile with a small number badge opens more choices inside it. Swipe left/right — or use the ‹ › arrows — for more pages. Tap the dark top bar to repeat the last phrase.</div>
+    <div class="helpsec"><b>Typing:</b> Tap <b>⌨️ Type</b> at the top to open the keyboard, type a message, and tap <b>🔊 Speak</b>.</div>
+    <div class="helpsec"><b>Editing the board:</b> Tap the <b>🔓 lock</b> and enter the edit PIN. In edit mode you can add a tile (the dashed <b>＋ Add tile</b>), edit a tile (the <b>✏️</b> on each one), drag tiles to reorder, add sub-tiles inside a tile, and delete tiles. Tap the lock again to leave edit mode.</div>
+    <div class="helpsec"><b>Settings (⚙️, in edit mode):</b> Change the board name, the greeting name, the color theme, tiles per page, the voice and speaking speed, and back up or restore the board.</div>
+    <div class="helpsec"><b>Natural voice on iPad:</b> Settings → Accessibility → Spoken Content → Voices → download an “Enhanced” voice, then choose it in ⚙️ → Voice.</div>
+    <div class="helpsec"><b>Backup / copy to another device:</b> ⚙️ → “Save board to a file”, then “Load board from a file” on the other device.</div>
+
+    <div class="field">
+      <label>Edit PIN</label>
+      <button class="btn ghost" id="revealPin" style="width:auto;padding:8px 16px;">Show edit PIN</button>
+      <span id="pinReveal" style="display:none;margin-left:12px;font-weight:800;font-size:22px;letter-spacing:4px;color:var(--accent);"></span>
+    </div>
+
+    <div class="field">
+      <label>Notes for this device</label>
+      <textarea id="infoNotes" placeholder="e.g. Managed by ___.  Questions? Call ___."></textarea>
+      <div class="hintline" id="infoNotesHint">Unlock (🔓) to edit these notes.</div>
+    </div>
+
+    <div class="info-footer">
+      <div class="credit">
+        Lori's Voice, developed by Dave Tanner &nbsp;|&nbsp;
+        <a href="https://www.scriptingforschools.org" target="_blank" rel="noopener">www.scriptingforschools.org</a>
+      </div>
+      <button class="linklike" id="privacyLink">Data &amp; Privacy</button>
+    </div>
+
+    <button class="btn ghost" id="closeInfo" style="margin-top:12px;">Close</button>
+  </div>
+</div>
+
+<!-- Data & privacy -->
+<div class="scrim" id="privacyScrim">
+  <div class="sheet">
+    <h2>Data &amp; Privacy</h2>
+    <div class="helpsec"><b>Where your changes are saved.</b> Everything you set up — your tiles and words, the board name, the greeting, colors, voice, speaking speed, PIN, and notes — is saved locally on this device. It is not uploaded to a Lori's Voice server.</div>
+    <div class="helpsec"><b>Nothing is sent automatically.</b> There is no account and no sign-in. Lori's Voice does not upload your board, your words, or anything you type to a Lori's Voice server. There is no tracking and no advertising. A backup is shared only when you choose a destination for it.</div>
+    <div class="helpsec"><b>Speaking.</b> When you tap a tile or use the keyboard, the app uses your device's own built-in voice to say the words out loud. What you tap or type is not saved after it is spoken.</div>
+    <div class="helpsec"><b>Keep a backup.</b> Because everything lives on this one device, it is a good idea to keep a copy. In Settings, tap “Save board to a file.” If the device is reset, its local site/app data is cleared, or the installed app is removed, the saved board can be lost — a backup lets you restore it, or copy it to another device with “Load board from a file.”</div>
+    <div class="helpsec"><b>Each device is separate.</b> Every device keeps its own copy. To use the same board on another device, save it to a file here and load that file there.</div>
+    <button class="btn ghost" id="closePrivacy">Close</button>
+  </div>
+</div>
+
+<!-- Generic confirm (no native confirm — blocked in some iframes) -->
+<div class="scrim" id="confirmScrim">
+  <div class="sheet" style="max-width:360px;text-align:center;">
+    <h2 id="confirmText" style="font-size:19px;">Are you sure?</h2>
+    <div class="row-actions">
+      <button class="btn ghost" id="confirmNo">Cancel</button>
+      <button class="btn danger" id="confirmYes" style="flex:1;">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- PIN keypad -->
+<div class="scrim" id="pinScrim">
+  <div class="sheet" style="max-width:300px;text-align:center;">
+    <h2 style="font-size:18px;margin-bottom:8px;">Enter PIN to edit</h2>
+    <div id="pinDots" class="pindots"></div>
+    <div class="keypad" id="keypad"></div>
+    <button class="btn ghost" id="pinCancel" style="margin-top:16px;">Cancel</button>
+  </div>
+</div>
+
+<!-- Full-screen typing keyboard -->
+<div id="kbScreen">
+  <div id="kbTop">
+    <button id="kbClose">‹ Board</button>
+    <div id="kbTitle">Type to talk</div>
+  </div>
+  <div id="kbText" onclick="kbReSpeak()"><span class="ph">Type here, then tap Speak</span></div>
+  <button id="kbSpeak">🔊 Speak</button>
+  <div id="kbKeys"></div>
+</div>
+
+<script>
+/* ---------------- data ---------------- */
+var PALETTE = ["#3b7d6e","#c2683b","#5b6bbf","#b8843a","#a14e72","#4a8fb0","#7a8a3a","#9b5b4c"];
+var EMOJI_PICKS = ["🍽️","😴","💬","🪑","❤️","🆘","🚻","🥤","😊","😢","✅","🎲","👍","👎","🍕","🍎","🥪","🍪","💧","🧃","🥛","📺","🎵","📚","🚗","☀️","🤗","🙏","🛑","🎮"];
+
+function uid(){ return "t"+Math.random().toString(36).slice(2,9); }
+
+function starter(){
+  return {
+    title:"Lori's Voice",
+    pageSize:6,
+    tiles:[
+      {id:uid(),emoji:"🍽️",label:"Hungry",speak:"I'm hungry",color:"#c2683b",children:[
+        {id:uid(),emoji:"🥗",label:"Chicken salad",speak:"Do we have any chicken salad?",color:"#7a8a3a",children:[]},
+        {id:uid(),emoji:"🍉",label:"Watermelon",speak:"I'd love some watermelon",color:"#a14e72",children:[]},
+        {id:uid(),emoji:"🍞",label:"Good bread",speak:"Do we have any good bread, maybe sourdough?",color:"#b8843a",children:[]},
+        {id:uid(),emoji:"🍿",label:"Popcorn",speak:"Can we make some popcorn?",color:"#5b6bbf",children:[]}
+      ]},
+      {id:uid(),emoji:"🆘",label:"Help",speak:"I need help",color:"#5b6bbf",children:[]},
+      {id:uid(),emoji:"💧",label:"Thirsty",speak:"I'm thirsty",color:"#4a8fb0",children:[
+        {id:uid(),emoji:"🥤",label:"Water bottle",speak:"Can I have my water bottle?",color:"#4a8fb0",children:[]},
+        {id:uid(),emoji:"🧃",label:"Juice",speak:"I'd like some juice",color:"#b8843a",children:[]}
+      ]},
+      {id:uid(),emoji:"❤️",label:"I love you",speak:"I love you",color:"#a14e72",children:[]},
+      {id:uid(),emoji:"🙏",label:"Thank you",speak:"Thank you",color:"#b8843a",children:[]},
+      {id:uid(),emoji:"😣",label:"Pain",speak:"I'm in pain",color:"#c2683b",children:[
+        {id:uid(),emoji:"🙂",label:"A little",speak:"It hurts a little",color:"#7a8a3a",children:[]},
+        {id:uid(),emoji:"😣",label:"A lot",speak:"It hurts a lot",color:"#c2683b",children:[]},
+        {id:uid(),emoji:"⬆️",label:"Worse",speak:"The pain is getting worse",color:"#9b5b4c",children:[]},
+        {id:uid(),emoji:"💊",label:"Medicine",speak:"I need my pain medicine",color:"#5b6bbf",children:[]}
+      ]},
+      {id:uid(),emoji:"👍",label:"Yes",speak:"Yes",color:"#3b7d6e",children:[]},
+      {id:uid(),emoji:"👎",label:"No",speak:"No",color:"#9b5b4c",children:[]},
+      {id:uid(),emoji:"🛏️",label:"Move me",speak:"Please help me move",color:"#7a8a3a",children:[
+        {id:uid(),emoji:"⬆️",label:"Sit up",speak:"I'd like to sit up",color:"#7a8a3a",children:[]},
+        {id:uid(),emoji:"⬇️",label:"Lie down",speak:"I'd like to lie down",color:"#5b6bbf",children:[]},
+        {id:uid(),emoji:"🌳",label:"Sit outside",speak:"Can we sit outside?",color:"#4a8fb0",children:[]},
+        {id:uid(),emoji:"🛌",label:"Pillow",speak:"Can you fix my pillow?",color:"#a14e72",children:[]},
+        {id:uid(),emoji:"🌰",label:"Acorn",speak:"I'd like to use the Acorn",color:"#b8843a",children:[]},
+        {id:uid(),emoji:"♿",label:"Wheelchair",speak:"Can you help me into my wheelchair?",color:"#4a8fb0",children:[]},
+        {id:uid(),emoji:"🛋️",label:"Recliner",speak:"I'd like to sit in the recliner",color:"#9b5b4c",children:[]}
+      ]},
+      {id:uid(),emoji:"🥶",label:"Cold",speak:"I'm cold",color:"#5b6bbf",children:[]},
+      {id:uid(),emoji:"🥵",label:"Warm",speak:"I'm too warm",color:"#c2683b",children:[]},
+      {id:uid(),emoji:"😴",label:"Nap/Sleep",speak:"I'd like to take a nap",color:"#6a6f8c",children:[]},
+      {id:uid(),emoji:"🚻",label:"Bathroom",speak:"I need the bathroom",color:"#4a8fb0",children:[]},
+      {id:uid(),emoji:"🤝",label:"Hold my hand",speak:"Will you hold my hand?",color:"#a14e72",children:[]},
+      {id:uid(),emoji:"💬",label:"Stay with me",speak:"Please stay with me",color:"#3b7d6e",children:[]},
+      {id:uid(),emoji:"🎵",label:"Music",speak:"Can we listen to music?",color:"#b8843a",children:[]},
+      {id:uid(),emoji:"📺",label:"TV",speak:"Can we watch TV?",color:"#4a8fb0",children:[]},
+      {id:uid(),emoji:"💗",label:"Scared",speak:"I'm feeling scared",color:"#9b5b4c",children:[]},
+      {id:uid(),emoji:"🙂",label:"I'm okay",speak:"I'm okay",color:"#7a8a3a",children:[]},
+      {id:uid(),emoji:"✅",label:"All done",speak:"I'm all done",color:"#3b7d6e",children:[]},
+      {id:uid(),emoji:"🏖️",label:"Beach",speak:"Can we go to the beach?",color:"#4a8fb0",children:[]},
+      {id:uid(),emoji:"💭",label:"I'm feeling",speak:"I'm feeling",color:"#5b6bbf",children:[
+        {id:uid(),emoji:"😄",label:"That's funny",speak:"That's funny!",color:"#b8843a",children:[]},
+        {id:uid(),emoji:"🤢",label:"Sick",speak:"I feel sick",color:"#7a8a3a",children:[]},
+        {id:uid(),emoji:"😴",label:"Tired",speak:"I'm tired",color:"#6a6f8c",children:[]}
+      ]},
+      {id:uid(),emoji:"🗣️",label:"Words",speak:"Words",color:"#6a6f8c",children:[
+        {id:uid(),emoji:"👨",label:"Husband",speak:"Husband",color:"#4a8fb0",children:[]},
+        {id:uid(),emoji:"👩",label:"Wife",speak:"Wife",color:"#a14e72",children:[]},
+        {id:uid(),emoji:"🐦",label:"Hummingbird",speak:"Hummingbird",color:"#7a8a3a",children:[]}
+      ]}
+    ]
+  };
+}
+
+
+/* ---------------- storage (web + native iOS) ---------------- */
+var KEY="talkboard.v1", mem=null;
+var NATIVE_IOS = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.lorisVoice);
+function nativePost(payload){
+  if(!NATIVE_IOS) return false;
+  try{ window.webkit.messageHandlers.lorisVoice.postMessage(payload); return true; }catch(e){ return false; }
+}
+function save(){
+  var json=JSON.stringify(model);
+  try{ localStorage.setItem(KEY, json); }catch(e){ mem=json; }
+  if(NATIVE_IOS) nativePost({action:"saveModel", json:json});
+}
+function load(){
+  if(window.__LORIS_NATIVE_MODEL__ && window.__LORIS_NATIVE_MODEL__.tiles){
+    return window.__LORIS_NATIVE_MODEL__;
+  }
+  try{ var s=localStorage.getItem(KEY); if(s) return JSON.parse(s); }catch(e){}
+  if(mem) try{ return JSON.parse(mem); }catch(e){}
+  return starter();
+}
+var model = load();
+var OWNER = "Lori";
+if(!model.title || model.title==="TalkBoard"){ model.title="Lori's Voice"; save(); }
+
+/* ---------------- view state ---------------- */
+var path=[];     // array of tile ids into the tree; [] = root
+var pageStack=[];// the main-menu page you were on before drilling into a group
+var page=0;
+var admin=false;
+var PAGE=6;
+
+function currentBoard(){
+  var arr=model.tiles, parent=null;
+  for(var i=0;i<path.length;i++){
+    parent = arr.find(function(t){return t.id===path[i];});
+    if(!parent){ path=path.slice(0,i); pageStack=pageStack.slice(0,i); break; }
+    arr = parent.children;
+  }
+  return {arr:arr, parent:parent};
+}
+
+/* ---------------- voices ---------------- */
+var VOICES=[];
+var FEMALE=["samantha","karen","moira","tessa","fiona","victoria","allison","ava",
+  "susan","zoe","serena","kate","catherine","nora","joana","paulina","amelie","anna","ellen","female"];
+function isFemale(v){ var n=(v.name||"").toLowerCase(); return FEMALE.some(function(f){return n.indexOf(f)>-1;}); }
+function pickDefault(){
+  var en=VOICES.filter(function(v){return /^en/i.test(v.lang);});
+  var pool=en.length?en:VOICES;
+  function score(v){
+    var s=0;
+    if(/ava/i.test(v.name||"")) s+=6;                           // prefer Ava if installed
+    if(isFemale(v)) s+=4;
+    if(/enhanced|premium|natural|siri/i.test(v.name||"")) s+=3;  // higher-quality variants
+    if(/en[-_]us/i.test(v.lang)) s+=1;
+    if(v.localService) s+=1;                                     // works offline
+    return s;
+  }
+  return pool.slice().sort(function(a,b){return score(b)-score(a);})[0];
+}
+function loadVoices(){
+  if(NATIVE_IOS && Array.isArray(window.__LORIS_NATIVE_VOICES__)){
+    VOICES=window.__LORIS_NATIVE_VOICES__.slice();
+  } else {
+    try{ VOICES=speechSynthesis.getVoices()||[]; }catch(e){ VOICES=[]; }
+  }
+  if(VOICES.length && !model.voiceURI){
+    var d=pickDefault(); if(d){ model.voiceURI=d.voiceURI; save(); }
+  }
+  var sc=document.getElementById("menuScrim");
+  if(sc && sc.classList.contains("show")) fillVoices();
+}
+function currentVoice(){
+  if(!VOICES.length){
+    if(NATIVE_IOS && Array.isArray(window.__LORIS_NATIVE_VOICES__)) VOICES=window.__LORIS_NATIVE_VOICES__.slice();
+    else try{ VOICES=speechSynthesis.getVoices()||[]; }catch(e){}
+  }
+  if(model.voiceURI){
+    for(var i=0;i<VOICES.length;i++){ if(VOICES[i].voiceURI===model.voiceURI) return VOICES[i]; }
+  }
+  return null;
+}
+
+/* ---------------- speech ---------------- */
+function speak(text){
+  if(!text) return;
+  window.lastPhrase=text;
+  var v=currentVoice();
+  if(NATIVE_IOS){
+    nativePost({
+      action:"speak",
+      text:text,
+      rate:model.rate||0.9,
+      voiceURI:(v&&v.voiceURI)||model.voiceURI||"",
+      voiceName:(v&&v.name)||"",
+      lang:(v&&v.lang)||"en-US"
+    });
+  } else {
+    try{
+      speechSynthesis.cancel();
+      var u=new SpeechSynthesisUtterance(text);
+      if(v){ u.voice=v; u.lang=v.lang; }
+      u.rate=model.rate||0.9; u.pitch=1;
+      speechSynthesis.speak(u);
+    }catch(e){}
+  }
+  var b=document.getElementById("banner");
+  b.textContent=text; b.classList.add("active"); b.classList.remove("greet");
+  clearTimeout(bannerTimer);
+  bannerTimer=setTimeout(resetBanner, 8000);
+}
+var bannerTimer=null;
+function resetBanner(){
+  var b=document.getElementById("banner");
+  b.textContent=greeting();
+  b.classList.add("greet");
+  b.classList.remove("active");
+  window.lastPhrase=null;
+}
+
+/* ---------------- contrast ---------------- */
+function textOn(hex){
+  var c=hex.replace("#","");
+  var r=parseInt(c.substr(0,2),16),g=parseInt(c.substr(2,2),16),bl=parseInt(c.substr(4,2),16);
+  return (r*299+g*587+bl*114)/1000 > 150 ? "#2b2a28" : "#ffffff";
+}
+
+/* ---------------- render ---------------- */
+function render(){
+  PAGE = model.pageSize || 6;
+  document.getElementById("grid").classList.toggle("s4", PAGE===4);
+  document.body.classList.toggle("admin", admin);
+  document.getElementById("lockBtn").textContent = admin ? "🔒" : "🔓";
+  document.getElementById("lockBtn").classList.toggle("on", admin);
+  document.getElementById("title").textContent = model.title;
+  document.title = model.title;
+  applyTheme();
+
+  var b=currentBoard();
+  var arr=b.arr;
+  var inSub = path.length>0;
+  document.getElementById("back").style.display="none";   // replaced by an in-grid tile
+  document.getElementById("crumbLabel").textContent = b.parent ? b.parent.label : "";
+
+  var perPage = inSub ? (PAGE-1) : PAGE;     // reserve slot 0 for Back on sub-boards
+  var extras  = admin ? 1 : 0;
+  var pages = Math.max(1, Math.ceil((arr.length + extras) / perPage));
+  if(page>=pages) page=pages-1;
+
+  var grid=document.getElementById("grid");
+  grid.innerHTML="";
+
+  // Back tile — same size as the others, always first cell on a sub-board
+  if(inSub){
+    var bk=document.createElement("button");
+    bk.className="tile back-tile";
+    bk.innerHTML='<div class="emoji">↩︎</div><div class="label">Back to<br>main menu</div>';
+    bk.onclick=function(){ if(suppressClick){ suppressClick=false; return; } var rp=pageStack.length?pageStack[0]:0; path=[]; pageStack=[]; page=rp; render(); };
+    grid.appendChild(bk);
+  }
+
+  var start=page*perPage;
+  var slice=arr.slice(start, start+perPage);
+
+  slice.forEach(function(tile, idx){
+    var realIndex=start+idx;
+    var el=document.createElement("button");
+    el.className="tile"+(tile.speaking?" speaking":"");
+    el.style.background=tile.color;
+    el.style.color=textOn(tile.color);
+    var fork = (tile.children&&tile.children.length) ? '<div class="fork-dot">'+tile.children.length+'</div>' : '';
+    var face = tile.image
+      ? '<img class="tile-img" src="'+tile.image+'" alt="">'
+      : '<div class="emoji">'+(tile.emoji||"·")+'</div>';
+    el.innerHTML='<div class="edit-pencil">✏️</div>'+fork+ face +
+      '<div class="label">'+escapeHtml(tile.label)+'</div>';
+    el.dataset.idx=realIndex;
+    el.onclick=function(){ if(suppressClick){ suppressClick=false; return; } onTile(tile, arr, realIndex); };
+    if(admin){ el.addEventListener("pointerdown", function(e){ startDrag(el, arr, realIndex, e); }); }
+    grid.appendChild(el);
+  });
+
+  // "add" tile fills the last slot on the last page in admin mode
+  if(admin && (slice.length + (inSub?1:0)) < PAGE){
+    var add=document.createElement("button");
+    add.className="tile add";
+    add.innerHTML='<div class="emoji">＋</div><div class="label">Add tile</div>';
+    add.onclick=function(){ addTileTo(arr); };
+    grid.appendChild(add);
+  }
+
+  // pager + arrows
+  var pager=document.getElementById("pager"); pager.innerHTML="";
+  for(var p=0;p<pages;p++){
+    var d=document.createElement("div");
+    d.className="dot"+(p===page?" on":"");
+    pager.appendChild(d);
+  }
+  document.getElementById("arrowL").classList.toggle("show", page>0);
+  document.getElementById("arrowR").classList.toggle("show", page<pages-1);
+  window._pages=pages;
+}
+
+function escapeHtml(s){ return (s||"").replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+
+/* ---------------- drag to reorder (admin only) ---------------- */
+var suppressClick=false;
+function startDrag(el, arr, fromIdx, e){
+  if(!admin) return;
+  if(e.target.closest(".edit-pencil")) return;
+  var startX=e.clientX, startY=e.clientY, moved=false, clone=null, offX=0, offY=0;
+  var edgeZone=null, edgeTimer=null;
+  function move(ev){
+    var dx=ev.clientX-startX, dy=ev.clientY-startY;
+    if(!moved && Math.sqrt(dx*dx+dy*dy)>10){
+      moved=true;
+      el.classList.add("drag-src");
+      var r=el.getBoundingClientRect();
+      offX=startX-r.left; offY=startY-r.top;
+      clone=el.cloneNode(true); clone.className="tile drag-clone";
+      clone.style.width=r.width+"px"; clone.style.height=r.height+"px";
+      document.body.appendChild(clone);
+    }
+    if(moved){
+      clone.style.left=(ev.clientX-offX)+"px";
+      clone.style.top=(ev.clientY-offY)+"px";
+      // hold near a side edge to flip pages
+      var W=window.innerWidth, z = ev.clientX<70 ? "L" : (ev.clientX>W-70 ? "R" : null);
+      if(z!==edgeZone){
+        edgeZone=z; clearTimeout(edgeTimer);
+        if(z){ edgeTimer=setTimeout(function(){
+          if(z==="L" && page>0){ page--; render(); }
+          else if(z==="R" && page<window._pages-1){ page++; render(); }
+          edgeZone=null;
+        }, 450); }
+      }
+      var t=tileUnder(ev.clientX, ev.clientY, el);
+      document.querySelectorAll(".tile.drag-over").forEach(function(x){x.classList.remove("drag-over");});
+      if(t) t.classList.add("drag-over");
+    }
+  }
+  function up(ev){
+    clearTimeout(edgeTimer);
+    document.removeEventListener("pointermove", move);
+    document.removeEventListener("pointerup", up);
+    document.removeEventListener("pointercancel", up);
+    if(!moved) return;                       // it was a tap -> let click open the editor
+    suppressClick=true;
+    var t=tileUnder(ev.clientX, ev.clientY, el);
+    if(clone) clone.remove();
+    document.querySelectorAll(".tile.drag-over").forEach(function(x){x.classList.remove("drag-over");});
+    el.classList.remove("drag-src");
+    if(t && t.dataset.idx!==undefined){
+      var toIdx=parseInt(t.dataset.idx,10);
+      var item=arr.splice(fromIdx,1)[0];
+      arr.splice(toIdx,0,item);
+      save();
+    }
+    render();
+  }
+  document.addEventListener("pointermove", move);
+  document.addEventListener("pointerup", up);
+  document.addEventListener("pointercancel", up);
+}
+function tileUnder(x,y,exclude){
+  var stack=document.elementsFromPoint(x,y);
+  for(var i=0;i<stack.length;i++){
+    var t=stack[i].closest && stack[i].closest(".tile");
+    if(t && t!==exclude && !t.classList.contains("drag-clone") &&
+       !t.classList.contains("add") && t.dataset.idx!==undefined) return t;
+  }
+  return null;
+}
+
+/* ---------------- interactions ---------------- */
+var lastTap=0;
+function onTile(tile, arr, index){
+  if(admin){ openTop(tile, arr, index); return; }
+  var now=Date.now();
+  if(now-lastTap<500) return;   // debounce: a tremor won't fire twice
+  lastTap=now;
+  speak(tile.speak || tile.label);
+  // flash speaking ring
+  tile.speaking=true; render();
+  setTimeout(function(){ tile.speaking=false;
+    var b=currentBoard().arr; // re-render only if still on same board
+    render();
+  }, 900);
+  if(tile.children && tile.children.length){
+    setTimeout(function(){ pageStack.push(page); path.push(tile.id); page=0; render(); }, 380);
+  }
+}
+
+document.getElementById("back").onclick=function(){ path.pop(); page=pageStack.pop()||0; render(); };
+document.getElementById("banner").onclick=function(){ if(window.lastPhrase) speak(window.lastPhrase); };
+document.getElementById("lockBtn").onclick=function(){
+  if(admin){ admin=false; page=0; render(); }   // leaving edit mode is free
+  else { openPin(); }                            // entering requires the PIN
+};
+document.getElementById("arrowL").onclick=function(){ if(page>0){page--;render();} };
+document.getElementById("arrowR").onclick=function(){ if(page<window._pages-1){page++;render();} };
+document.getElementById("addPrimary").onclick=function(){ addTileTo(currentBoard().arr); };
+
+/* swipe */
+var sx=0,sy=0;
+document.getElementById("stage").addEventListener("touchstart",function(e){
+  sx=e.touches[0].clientX; sy=e.touches[0].clientY;
+},{passive:true});
+document.getElementById("stage").addEventListener("touchend",function(e){
+  if(admin) return;   // in edit mode use the arrows; keep touch free for dragging
+  var dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy;
+  if(Math.abs(dx)>90 && Math.abs(dx)>Math.abs(dy)*1.5){
+    if(dx<0 && page<window._pages-1){page++;render();}
+    else if(dx>0 && page>0){page--;render();}
+  }
+},{passive:true});
+document.addEventListener("keydown",function(e){
+  if(document.querySelector(".scrim.show")) return;
+  if(document.getElementById("kbScreen").classList.contains("show")) return;
+  if(e.key==="ArrowRight" && page<window._pages-1){page++;render();}
+  if(e.key==="ArrowLeft" && page>0){page--;render();}
+});
+
+/* ---------------- editor ---------------- */
+var editing=null;        // top of the edit stack: {tile, arr, index}
+var editStack=[];
+function addTileTo(arr){
+  var t={id:uid(),emoji:"",label:"",speak:"",color:PALETTE[arr.length%PALETTE.length],children:[]};
+  arr.push(t); save();
+  openTop(t, arr, arr.length-1);
+}
+function openTop(tile, arr, index){ editStack=[]; openEditor(tile, arr, index); }   // top-level: fresh stack
+function openEditor(tile, arr, index){ editStack.push({tile:tile, arr:arr, index:index}); showEditor(); }
+function showEditor(){
+  var ctx=editStack[editStack.length-1];
+  editing=ctx; var tile=ctx.tile;
+  document.getElementById("editBack").style.display = editStack.length>1 ? "block" : "none";
+  document.getElementById("editTitle").textContent = tile.label ? "Edit “"+tile.label+"”" : "New tile";
+  document.getElementById("fEmoji").value=tile.emoji||"";
+  document.getElementById("fLabel").value=tile.label||"";
+  document.getElementById("fSpeak").value=tile.speak||"";
+  var tpw=document.getElementById("tilePhotoWrap"), tpp=document.getElementById("tilePhotoPreview");
+  if(tile.image){ tpp.src=tile.image; tpw.style.display="block"; } else { tpp.src=""; tpw.style.display="none"; }
+  document.getElementById("tilePhotoInput").value="";
+
+  var ep=document.getElementById("emojiPicks"); ep.innerHTML="";
+  EMOJI_PICKS.forEach(function(em){
+    var b=document.createElement("button"); b.className="pick"; b.textContent=em;
+    b.onclick=function(){ document.getElementById("fEmoji").value=em; tile.emoji=em; save(); };
+    ep.appendChild(b);
+  });
+  var sw=document.getElementById("swatches"); sw.innerHTML="";
+  PALETTE.forEach(function(col){
+    var s=document.createElement("div"); s.className="sw"+(col===tile.color?" sel":"");
+    s.style.background=col;
+    s.onclick=function(){ tile.color=col; save(); document.querySelectorAll("#swatches .sw").forEach(function(x){x.classList.remove("sel");}); s.classList.add("sel"); };
+    sw.appendChild(s);
+  });
+  renderForks();
+  document.getElementById("editScrim").classList.add("show");
+}
+function backOrClose(){
+  var t=editing.tile;   // auto-remove a tile left completely empty
+  if(!t.emoji && !t.image && !t.label && (!t.children||!t.children.length)){
+    var i=editing.arr.indexOf(t); if(i>-1) editing.arr.splice(i,1);
+  }
+  save();
+  editStack.pop();
+  if(editStack.length){ showEditor(); }                                    // return to parent
+  else { document.getElementById("editScrim").classList.remove("show"); render(); }
+}
+function renderForks(){
+  var tile=editing.tile, fl=document.getElementById("forkList"); fl.innerHTML="";
+  var kids=tile.children||[];
+  kids.forEach(function(ch, i){
+    var row=document.createElement("div"); row.className="forkrow";
+    var fface = ch.image ? '<img src="'+ch.image+'" style="width:26px;height:26px;object-fit:cover;border-radius:6px;display:block;">' : (ch.emoji||"·");
+    row.innerHTML='<span class="fe">'+fface+'</span><span class="fl">'+escapeHtml(ch.label||"(untitled)")+'</span>';
+    var up=document.createElement("button"); up.textContent="▲";
+    up.onclick=function(){ if(i>0){ var x=kids.splice(i,1)[0]; kids.splice(i-1,0,x); save(); renderForks(); } };
+    var dn=document.createElement("button"); dn.textContent="▼";
+    dn.onclick=function(){ if(i<kids.length-1){ var x=kids.splice(i,1)[0]; kids.splice(i+1,0,x); save(); renderForks(); } };
+    var ed=document.createElement("button"); ed.textContent="✏️";
+    ed.onclick=function(){ openEditor(ch, kids, i); };
+    var rm=document.createElement("button"); rm.textContent="🗑️";
+    rm.onclick=function(){ askConfirm("Delete “"+(ch.label||"this")+"”?", function(){ kids.splice(i,1); save(); renderForks(); }); };
+    row.appendChild(up); row.appendChild(dn); row.appendChild(ed); row.appendChild(rm);
+    fl.appendChild(row);
+  });
+}
+document.getElementById("fEmoji").oninput=function(){ editing.tile.emoji=this.value; save(); };
+document.getElementById("fLabel").oninput=function(){ editing.tile.label=this.value; save(); };
+document.getElementById("fSpeak").oninput=function(){ editing.tile.speak=this.value; save(); };
+function imageToDataURL(file, max, cb){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      var scale=Math.min(1, max/Math.max(img.width,img.height));
+      var w=Math.round(img.width*scale), hh=Math.round(img.height*scale);
+      var c=document.createElement("canvas"); c.width=w; c.height=hh;
+      c.getContext("2d").drawImage(img,0,0,w,hh);
+      cb(c.toDataURL("image/jpeg",0.82));
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+document.getElementById("tilePhotoInput").onclick=function(e){
+  if(NATIVE_IOS){ e.preventDefault(); nativePost({action:"pickPhoto"}); return false; }
+};
+document.getElementById("tilePhotoInput").onchange=function(e){
+  var f=e.target.files[0]; if(!f) return;
+  imageToDataURL(f, 240, function(dataUrl){
+    applySelectedPhoto(dataUrl);
+  });
+};
+function applySelectedPhoto(dataUrl){
+  if(!editing || !editing.tile || !dataUrl) return;
+  editing.tile.image=dataUrl; save();
+  var tpw=document.getElementById("tilePhotoWrap"), tpp=document.getElementById("tilePhotoPreview");
+  tpp.src=dataUrl; tpw.style.display="block";
+  render();
+}
+window.nativePhotoSelected=function(dataUrl){ applySelectedPhoto(dataUrl); };
+document.getElementById("tilePhotoRemove").onclick=function(){
+  delete editing.tile.image; save();
+  document.getElementById("tilePhotoWrap").style.display="none";
+  document.getElementById("tilePhotoInput").value="";
+  render();
+};
+document.getElementById("addFork").onclick=function(){
+  if(!editing.tile.children) editing.tile.children=[];
+  var c={id:uid(),emoji:"",label:"",speak:"",color:editing.tile.color,children:[]};
+  editing.tile.children.push(c); save();
+  openEditor(c, editing.tile.children, editing.tile.children.length-1);
+};
+document.getElementById("editBack").onclick=function(){ backOrClose(); };
+function moveCur(kind){
+  var arr=editing.arr, t=editing.tile, i=arr.indexOf(t); if(i<0) return;
+  var j = kind==="front" ? 0 : (kind==="up" ? i-1 : i+1);
+  j=Math.max(0,Math.min(arr.length-1,j));
+  if(j!==i){ arr.splice(i,1); arr.splice(j,0,t); editing.index=j; save(); render(); }
+}
+document.getElementById("moveFront").onclick=function(){ moveCur("front"); };
+document.getElementById("moveUp").onclick=function(){ moveCur("up"); };
+document.getElementById("moveDown").onclick=function(){ moveCur("down"); };
+document.getElementById("delTile").onclick=function(){
+  askConfirm("Delete “"+(editing.tile.label||"this tile")+"”?", function(){
+    var t=editing.tile, i=editing.arr.indexOf(t); if(i>-1) editing.arr.splice(i,1);
+    save();
+    editStack.pop();
+    if(editStack.length){ showEditor(); }
+    else { document.getElementById("editScrim").classList.remove("show"); render(); }
+  });
+};
+document.getElementById("doneTile").onclick=function(){ backOrClose(); };
+
+/* ---------------- settings ---------------- */
+document.getElementById("menuBtn").onclick=function(){
+  document.getElementById("fTitle").value=model.title;
+  document.getElementById("fOwner").value=model.owner||"Lori";
+  document.getElementById("fPin").value=model.pin||"1234";
+  buildThemeSwatches();
+  markSize(); fillVoices(); markRate();
+  document.getElementById("menuScrim").classList.add("show");
+};
+function fillVoices(){
+  var sel=document.getElementById("voiceSel"); if(!sel) return;
+  if(!VOICES.length) loadVoices();
+  sel.innerHTML="";
+  if(!VOICES.length){
+    var o=document.createElement("option"); o.textContent="Loading voices… reopen in a moment";
+    sel.appendChild(o); return;
+  }
+  VOICES.slice().sort(function(a,b){
+    var ae=/^en/i.test(a.lang)?1:0, be=/^en/i.test(b.lang)?1:0;   // English first
+    if(ae!==be) return be-ae;
+    var af=isFemale(a)?1:0, bf=isFemale(b)?1:0;                   // female next
+    if(af!==bf) return bf-af;
+    return (a.name||"").localeCompare(b.name||"");
+  }).forEach(function(v){
+    var o=document.createElement("option");
+    o.value=v.voiceURI; o.textContent=v.name+"  ("+v.lang+")";
+    if(v.voiceURI===model.voiceURI) o.selected=true;
+    sel.appendChild(o);
+  });
+}
+document.getElementById("voiceSel").onchange=function(){ model.voiceURI=this.value; save(); };
+document.getElementById("voiceTest").onclick=function(){ speak("Hello. This is the voice I will use."); };
+function setRate(r){ model.rate=r; save(); markRate(); }
+function markRate(){
+  var slow=(model.rate||0.9)<0.85;
+  document.getElementById("spdSlow").classList.toggle("primary", slow);
+  document.getElementById("spdNorm").classList.toggle("primary", !slow);
+}
+document.getElementById("spdSlow").onclick=function(){ setRate(0.72); };
+document.getElementById("spdNorm").onclick=function(){ setRate(0.9); };
+function setSize(n){ model.pageSize=n; page=0; save(); markSize(); render(); }
+function markSize(){
+  document.getElementById("size6").classList.toggle("primary",(model.pageSize||6)===6);
+  document.getElementById("size4").classList.toggle("primary",(model.pageSize||6)===4);
+}
+document.getElementById("size6").onclick=function(){ setSize(6); };
+document.getElementById("size4").onclick=function(){ setSize(4); };
+document.getElementById("fTitle").oninput=function(){ model.title=this.value; save(); document.getElementById("title").textContent=model.title; document.title=model.title; };
+document.getElementById("fOwner").oninput=function(){
+  model.owner=this.value; save();
+  var b=document.getElementById("banner");
+  if(b.classList.contains("greet")) b.textContent=greeting();
+};
+var THEMES={
+  teal:{name:"Teal",accent:"#3b7d6e"},
+  ocean:{name:"Ocean",accent:"#3f6cae"},
+  plum:{name:"Plum",accent:"#7a5aa6"},
+  rose:{name:"Rose",accent:"#b0517a"},
+  amber:{name:"Amber",accent:"#b07a2e"},
+  slate:{name:"Slate",accent:"#4f5a6b"}
+};
+function applyTheme(){ var t=THEMES[model.theme]||THEMES.teal; document.documentElement.style.setProperty("--accent",t.accent); }
+function buildThemeSwatches(){
+  var wrap=document.getElementById("themeSwatches"); if(!wrap) return;
+  wrap.innerHTML="";
+  Object.keys(THEMES).forEach(function(k){
+    var s=document.createElement("div");
+    s.className="sw"+(((model.theme||"teal")===k)?" sel":"");
+    s.style.background=THEMES[k].accent; s.title=THEMES[k].name;
+    s.onclick=function(){ model.theme=k; save(); applyTheme();
+      document.querySelectorAll("#themeSwatches .sw").forEach(function(x){x.classList.remove("sel");}); s.classList.add("sel"); };
+    wrap.appendChild(s);
+  });
+}
+document.getElementById("closeMenu").onclick=function(){ document.getElementById("menuScrim").classList.remove("show"); };
+document.getElementById("fPin").oninput=function(){ this.value=this.value.replace(/[^0-9]/g,""); model.pin=this.value; save(); };
+document.getElementById("infoBtn").onclick=function(){
+  var notes=document.getElementById("infoNotes");
+  notes.value=model.infoNotes||"";
+  notes.readOnly=!admin;
+  document.getElementById("infoNotesHint").style.display=admin?"none":"block";
+  var pr=document.getElementById("pinReveal"); pr.style.display="none"; pr.textContent="";
+  document.getElementById("revealPin").style.display="inline-block";
+  document.getElementById("infoScrim").classList.add("show");
+};
+document.getElementById("revealPin").onclick=function(){
+  var pr=document.getElementById("pinReveal");
+  pr.textContent=model.pin||"1234"; pr.style.display="inline-block"; this.style.display="none";
+};
+document.getElementById("infoNotes").oninput=function(){ if(!admin) return; model.infoNotes=this.value; save(); };
+document.getElementById("closeInfo").onclick=function(){ document.getElementById("infoScrim").classList.remove("show"); };
+document.getElementById("privacyLink").onclick=function(){ document.getElementById("privacyScrim").classList.add("show"); };
+document.getElementById("closePrivacy").onclick=function(){ document.getElementById("privacyScrim").classList.remove("show"); };
+document.getElementById("exportBtn").onclick=function(){
+  var filename=(model.title||"talkboard").replace(/\s+/g,"_")+".json";
+  var json=JSON.stringify(model,null,2);
+  if(NATIVE_IOS){ nativePost({action:"exportBoard", json:json, filename:filename}); return; }
+  var blob=new Blob([json],{type:"application/json"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download=filename; a.click();
+};
+document.getElementById("importBtn").onclick=function(){
+  if(NATIVE_IOS){ nativePost({action:"importBoard"}); return; }
+  document.getElementById("importFile").click();
+};
+function importBoardJson(jsonText){
+  try{
+    var d=typeof jsonText==="string" ? JSON.parse(jsonText) : jsonText;
+    if(d && Array.isArray(d.tiles)){
+      model=d; path=[]; pageStack=[]; page=0; save();
+      document.getElementById("menuScrim").classList.remove("show"); render();
+      return true;
+    }
+  }catch(err){}
+  alert("That file couldn't be read.");
+  return false;
+}
+window.nativeImportBoard=function(jsonText){ importBoardJson(jsonText); };
+document.getElementById("importFile").onchange=function(e){
+  var f=e.target.files[0]; if(!f) return;
+  var r=new FileReader();
+  r.onload=function(){ importBoardJson(r.result); };
+  r.readAsText(f);
+};
+document.getElementById("resetBtn").onclick=function(){
+  askConfirm("Reset to the starter board? Your changes will be lost.", function(){
+    model=starter(); path=[];page=0; save();
+    document.getElementById("menuScrim").classList.remove("show"); render();
+  });
+};
+
+/* ---------------- confirm ---------------- */
+var confirmCb=null;
+function askConfirm(text, cb){
+  document.getElementById("confirmText").textContent=text;
+  confirmCb=cb; document.getElementById("confirmScrim").classList.add("show");
+}
+document.getElementById("confirmYes").onclick=function(){ document.getElementById("confirmScrim").classList.remove("show"); if(confirmCb) confirmCb(); };
+document.getElementById("confirmNo").onclick=function(){ document.getElementById("confirmScrim").classList.remove("show"); confirmCb=null; };
+
+/* ---------------- pin gate ---------------- */
+var ADMIN_PIN="1234";   // change here if you ever want a different code
+var pinEntry="";
+function openPin(){ pinEntry=""; drawPinDots(); document.getElementById("pinScrim").classList.add("show"); }
+function drawPinDots(){
+  var d=document.getElementById("pinDots"); d.innerHTML="";
+  for(var i=0;i<4;i++){ var s=document.createElement("div"); s.className="pd"+(i<pinEntry.length?" f":""); d.appendChild(s); }
+}
+function pinPress(n){
+  if(pinEntry.length>=4) return;
+  pinEntry+=n; drawPinDots();
+  if(pinEntry.length===4){
+    setTimeout(function(){
+      if(pinEntry===(model.pin||ADMIN_PIN)){
+        document.getElementById("pinScrim").classList.remove("show");
+        admin=true; page=0; render();
+      } else {
+        var sheet=document.querySelector("#pinScrim .sheet");
+        sheet.classList.add("shake");
+        setTimeout(function(){ sheet.classList.remove("shake"); pinEntry=""; drawPinDots(); },440);
+      }
+    },110);
+  }
+}
+(function(){
+  var kp=document.getElementById("keypad");
+  ["1","2","3","4","5","6","7","8","9","","0","⌫"].forEach(function(k){
+    var b=document.createElement("button");
+    if(k===""){ b.className="key blank"; kp.appendChild(b); return; }
+    b.className="key"; b.textContent=k;
+    b.onclick=function(){ if(k==="⌫"){ pinEntry=pinEntry.slice(0,-1); drawPinDots(); } else pinPress(k); };
+    kp.appendChild(b);
+  });
+})();
+document.getElementById("pinCancel").onclick=function(){ document.getElementById("pinScrim").classList.remove("show"); };
+
+/* ---------------- typing keyboard ---------------- */
+var kbText="";
+var KB_BUILT=false;
+function kbRender(){
+  var el=document.getElementById("kbText");
+  if(kbText){ el.textContent=kbText; }
+  else { el.innerHTML='<span class="ph">Type here, then tap Speak</span>'; }
+  el.scrollTop=el.scrollHeight;
+}
+function kbInsert(ch){ kbText+=ch; kbRender(); }
+function kbBackspace(){ kbText=kbText.slice(0,-1); kbRender(); }
+function kbClear(){ kbText=""; kbRender(); }
+function kbSpeak(){ var t=kbText.trim(); if(t) speak(t); }
+function kbReSpeak(){ var t=kbText.trim(); if(t) speak(t); }
+function buildKeys(){
+  if(KB_BUILT) return; KB_BUILT=true;
+  var keys=document.getElementById("kbKeys");
+  var rows=[
+    ["q","w","e","r","t","y","u","i","o","p"],
+    ["a","s","d","f","g","h","j","k","l"],
+    ["z","x","c","v","b","n","m",",",".","?"]
+  ];
+  rows.forEach(function(r){
+    var row=document.createElement("div"); row.className="kbrow";
+    r.forEach(function(ch){
+      var k=document.createElement("button"); k.className="kbkey";
+      k.textContent = /[a-z]/.test(ch) ? ch.toUpperCase() : ch;
+      k.onclick=function(){ kbInsert(ch); };
+      row.appendChild(k);
+    });
+    keys.appendChild(row);
+  });
+  var arow=document.createElement("div"); arow.className="kbrow";
+  var back=document.createElement("button"); back.className="kbkey action wide"; back.textContent="⌫";
+  back.onclick=kbBackspace;
+  var space=document.createElement("button"); space.className="kbkey space"; space.textContent="space";
+  space.onclick=function(){ kbInsert(" "); };
+  var clr=document.createElement("button"); clr.className="kbkey action wide"; clr.textContent="Clear";
+  clr.onclick=kbClear;
+  arow.appendChild(back); arow.appendChild(space); arow.appendChild(clr);
+  keys.appendChild(arow);
+}
+function openKeyboard(){ buildKeys(); kbRender(); document.getElementById("kbScreen").classList.add("show"); }
+function closeKeyboard(){ document.getElementById("kbScreen").classList.remove("show"); }
+document.getElementById("kbBtn").onclick=openKeyboard;
+document.getElementById("kbClose").onclick=closeKeyboard;
+document.getElementById("kbSpeak").onclick=kbSpeak;
+document.addEventListener("keydown",function(e){
+  if(!document.getElementById("kbScreen").classList.contains("show")) return;
+  if(e.key==="Enter"){ e.preventDefault(); kbSpeak(); return; }
+  if(e.key==="Backspace"){ e.preventDefault(); kbBackspace(); return; }
+  if(e.key==="Escape"){ closeKeyboard(); return; }
+  if(e.key===" "){ e.preventDefault(); kbInsert(" "); return; }
+  if(e.key && e.key.length===1 && /[a-z0-9 ,.?!'\-]/i.test(e.key)){ e.preventDefault(); kbInsert(e.key.toLowerCase()); }
+});
+
+/* ---------------- speech setup ---------------- */
+var primed=false;
+function primeSpeech(){
+  if(NATIVE_IOS || primed) return; primed=true;
+  try{ var u=new SpeechSynthesisUtterance(" "); u.volume=0; speechSynthesis.speak(u); }catch(e){}
+}
+document.addEventListener("touchstart", primeSpeech, {once:true});
+document.addEventListener("mousedown", primeSpeech, {once:true});
+
+/* Native voices are injected before page load; Safari voices arrive asynchronously. */
+loadVoices();
+if(!NATIVE_IOS){
+  try{ speechSynthesis.onvoiceschanged=loadVoices; }catch(e){}
+  setTimeout(loadVoices,300); setTimeout(loadVoices,1200);
+}
+
+function greeting(){
+  var h=new Date().getHours();
+  var part = h<12 ? "Good morning" : (h<17 ? "Good afternoon" : "Good evening");
+  return part+", "+(model.owner||OWNER)+" 💗";
+}
+(function(){
+  var b=document.getElementById("banner");
+  b.textContent=greeting();
+  b.classList.add("greet");
+})();
+
+render();
+</script>
+</body>
+</html>
