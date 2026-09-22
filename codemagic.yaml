@@ -23,6 +23,7 @@ workflows:
           cd "$CM_BUILD_DIR"
           plutil -lint App/Info.plist
           test -f App/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
+          test -f App/Assets.xcassets/AppIcon.appiconset/AppIcon-152.png
           test -f App/LegacyIcons/Icon-60@2x.png
           test -f App/LegacyIcons/Icon-76@2x.png
           echo "Source configuration verification passed."
@@ -70,6 +71,9 @@ workflows:
           echo "iPad primary icon files:"
           /usr/libexec/PlistBuddy -c 'Print :CFBundleIcons~ipad:CFBundlePrimaryIcon:CFBundleIconFiles' "$PLIST"
 
+          echo "Packaged icon files:"
+          find "$APP" -maxdepth 1 -type f -name 'Icon-*.png' -print | sort
+
           test -f "$APP/Icon-60@2x.png"
           test -f "$APP/Icon-60@3x.png"
           test -f "$APP/Icon-76.png"
@@ -88,13 +92,11 @@ workflows:
           test "$W152" = "152"
           test "$H152" = "152"
 
-          if [ -f "$APP/Assets.car" ]; then
-            echo "Assets.car is present."
-          else
-            echo "ERROR: Assets.car is missing."
-            exit 1
-          fi
+          test -f "$APP/Assets.car"
+          echo "Assets.car is present."
 
+          codesign --verify --deep --strict "$APP"
+          echo "Code signature verification passed."
           echo "Packaged icon verification passed."
 
     artifacts:

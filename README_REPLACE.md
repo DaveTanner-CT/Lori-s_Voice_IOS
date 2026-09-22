@@ -1,13 +1,13 @@
-# Lori's Voice v7 icon validation fix
+Lori's Voice iOS - v8 replacement files
 
-Replace/add these exact paths in the GitHub repository:
+Replace these files/folders in GitHub:
 
-- `/project.yml` -> replace
-- `/codemagic.yaml` -> replace
-- `/App/Info.plist` -> replace
-- `/App/Assets.xcassets/AppIcon.appiconset/` -> replace the folder contents
-- `/App/LegacyIcons/` -> add this new folder and all files in it
+1. root/project.yml
+2. root/codemagic.yaml
+3. App/Info.plist
+4. App/LegacyIcons/ (keep/replace with the folder included here)
+5. App/Assets.xcassets/AppIcon.appiconset/ (keep/replace with the folder included here)
 
-Do not put any of these files or folders at the repository root except `project.yml` and `codemagic.yaml`.
+Do not add any of these folders at the repository root.
 
-This version deliberately packages conventional loose iPhone/iPad icon PNGs in addition to the AppIcon asset catalog. The Codemagic verification step will fail before publishing unless the finished IPA contains both the 120x120 and 152x152 PNGs with the expected dimensions.
+The key v8 fix is a post-build Xcode script that explicitly copies the required loose iPhone/iPad icon PNG files into the root of the finished .app bundle before signing/export. The Codemagic verifier then checks the finished IPA for the exact 120x120 and 152x152 PNGs and validates the code signature before publishing.

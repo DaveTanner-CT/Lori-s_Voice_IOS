@@ -9,7 +9,7 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.0"
-    CURRENT_PROJECT_VERSION: "7"
+    CURRENT_PROJECT_VERSION: "8"
     DEVELOPMENT_TEAM: ""
 
 targets:
@@ -29,15 +29,6 @@ targets:
     resources:
       - path: App/Web/index.html
       - path: App/Assets.xcassets
-      - path: App/LegacyIcons/Icon-60@2x.png
-      - path: App/LegacyIcons/Icon-60@3x.png
-      - path: App/LegacyIcons/Icon-76.png
-      - path: App/LegacyIcons/Icon-76@2x.png
-      - path: App/LegacyIcons/Icon-83.5@2x.png
-      - path: App/LegacyIcons/Icon-Small-40.png
-      - path: App/LegacyIcons/Icon-Small-40@2x.png
-      - path: App/LegacyIcons/Icon-Small.png
-      - path: App/LegacyIcons/Icon-Small@2x.png
 
     settings:
       base:
@@ -49,7 +40,32 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_STANDALONE_ICON_BEHAVIOR: all
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
         CODE_SIGN_STYLE: Automatic
+
+    postBuildScripts:
+      - name: Copy required loose app icons
+        basedOnDependencyAnalysis: false
+        script: |
+          set -e
+          DEST="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}"
+          SRC="${SRCROOT}/App/LegacyIcons"
+
+          echo "Copying required app icons to: $DEST"
+          mkdir -p "$DEST"
+
+          cp "$SRC/Icon-60@2x.png" "$DEST/Icon-60@2x.png"
+          cp "$SRC/Icon-60@3x.png" "$DEST/Icon-60@3x.png"
+          cp "$SRC/Icon-76.png" "$DEST/Icon-76.png"
+          cp "$SRC/Icon-76@2x.png" "$DEST/Icon-76@2x.png"
+          cp "$SRC/Icon-83.5@2x.png" "$DEST/Icon-83.5@2x.png"
+          cp "$SRC/Icon-Small-40.png" "$DEST/Icon-Small-40.png"
+          cp "$SRC/Icon-Small-40@2x.png" "$DEST/Icon-Small-40@2x.png"
+          cp "$SRC/Icon-Small.png" "$DEST/Icon-Small.png"
+          cp "$SRC/Icon-Small@2x.png" "$DEST/Icon-Small@2x.png"
+
+          echo "Loose icon copy complete."
+          ls -l "$DEST"/Icon-*.png
 
     scheme:
       gatherCoverageData: false
