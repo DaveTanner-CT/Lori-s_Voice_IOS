@@ -17,26 +17,109 @@ workflows:
         XCODE_SCHEME: "LorisVoice"
 
     scripts:
+      - name: Verify source configuration
+        script: |
+          set -e
+          cd "$CM_BUILD_DIR"
+
+          plutil -lint App/Info.plist
+
+          ICON_NAME=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIconName" App/Info.plist)
+          if [ "$ICON_NAME" != "AppIcon" ]; then
+            echo "ERROR: App/Info.plist must contain CFBundleIconName = AppIcon"
+            exit 1
+          fi
+
+          test -f App/Assets.xcassets/AppIcon.appiconset/Contents.json
+          test -f App/Assets.xcassets/AppIcon.appiconset/AppIcon-120.png
+          test -f App/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
+
+          echo "Source configuration verification passed."
+
       - name: Install XcodeGen
         script: |
           brew install xcodegen
 
       - name: Generate Xcode project
         script: |
+          set -e
           cd "$CM_BUILD_DIR"
           xcodegen generate --spec project.yml
 
       - name: Apply signing profiles
         script: |
+          set -e
           cd "$CM_BUILD_DIR"
           xcode-project use-profiles
 
       - name: Build IPA
         script: |
+          set -e
           cd "$CM_BUILD_DIR"
           xcode-project build-ipa \
             --project "$XCODE_PROJECT" \
             --scheme "$XCODE_SCHEME"
+
+      - name: Verify packaged app
+        script: |
+          set -e
+
+          IPA=$(find "$CM_BUILD_DIR/build/ios/ipa" -name "*.ipa" -print -quit)
+          if [ -z "$IPA" ]; then
+            echo "ERROR: IPA not found"
+            exit 1
+          fi
+
+          rm -rf /tmp/loris_voice_ipa
+          mkdir -p /tmp/loris_voice_ipa
+          unzip -q "$IPA" -d /tmp/loris_voice_ipa
+
+          APP=$(find /tmp/loris_voice_ipa/Payload -maxdepth 1 -name "*.app" -print -quit)
+          if [ -z "$APP" ]; then
+            echo "ERROR: App bundle not found in IPA"
+            exit 1
+          fi
+
+          PLIST="$APP/Info.plist"
+          echo "Checking packaged Info.plist at $PLIST"
+
+          ICON_NAME=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "$PLIST")
+          echo "CFBundleIconName = $ICON_NAME"
+          if [ "$ICON_NAME" != "AppIcon" ]; then
+            echo "ERROR: Packaged CFBundleIconName is missing or incorrect"
+            exit 1
+          fi
+
+          ORIENTATIONS=$(/usr/libexec/PlistBuddy -c "Print :UISupportedInterfaceOrientations~ipad" "$PLIST" | grep -c "UIInterfaceOrientation" || true)
+          echo "iPad orientation entries = $ORIENTATIONS"
+          if [ "$ORIENTATIONS" -lt 4 ]; then
+            echo "ERROR: Packaged app does not contain all four iPad orientations"
+            exit 1
+          fi
+
+          if [ ! -f "$APP/Assets.car" ]; then
+            echo "ERROR: Compiled asset catalog Assets.car is missing"
+            exit 1
+          fi
+
+          FOUND_120=0
+          for IMG in "$APP"/*.png; do
+            [ -e "$IMG" ] || continue
+            WIDTH=$(sips -g pixelWidth "$IMG" 2>/dev/null | awk '/pixelWidth/ {print $2}')
+            HEIGHT=$(sips -g pixelHeight "$IMG" 2>/dev/null | awk '/pixelHeight/ {print $2}')
+            if [ "$WIDTH" = "120" ] && [ "$HEIGHT" = "120" ]; then
+              echo "Found packaged 120x120 icon: $(basename "$IMG")"
+              FOUND_120=1
+              break
+            fi
+          done
+
+          if [ "$FOUND_120" -ne 1 ]; then
+            echo "ERROR: No standalone 120x120 icon was found in the packaged app"
+            exit 1
+          fi
+
+          echo "Packaged app verification passed."
 
     artifacts:
       - build/ios/ipa/*.ipa
