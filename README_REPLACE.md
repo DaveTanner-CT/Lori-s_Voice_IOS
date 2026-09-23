@@ -1,11 +1,19 @@
-# Lori's Voice Build 12 compile fix
+# Lori's Voice Build 13 - Speaking Speed Fix
 
-Replace only these two files in the GitHub repository:
+Replace exactly these files in GitHub:
 
-- `App/BoardStore.swift`
-- `project.yml`
+1. `App/SpeechController.swift`
+2. `App/Web/index.html`
+3. root `project.yml`
 
-No other files should be changed.
+Do not replace any other files.
 
-## Fix
-Build 11 used `CocoaError(.fileWriteCorruptFile)`, but that `CocoaError.Code` member does not exist in the current Swift/Foundation SDK used by Codemagic. Build 12 replaces it with a small app-specific `BoardStoreError.invalidBoardData` error and increments the build number to 12.
+## What changed
+- Native iOS speech now uses three clearly separated AVSpeechSynthesizer rates:
+  - Very slow: 0.30
+  - Slower: 0.40
+  - Normal: 0.52
+- Tapping a speed setting immediately speaks: "This is the selected speaking speed."
+- The selected speed button is visibly highlighted.
+- Speed buttons expose `aria-pressed` state for accessibility.
+- Build number is 13.

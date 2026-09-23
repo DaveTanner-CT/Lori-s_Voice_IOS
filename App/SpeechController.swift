@@ -45,10 +45,15 @@ final class SpeechController {
     }
 
     private static func nativeRate(fromWebRate webRate: Double) -> Float {
-        // The web UI uses familiar 0.65-1.0 style values, while AVSpeechUtterance
-        // uses a different scale. Map it into a comfortable spoken range.
-        let clamped = min(max(webRate, 0.60), 1.05)
-        let fraction = (clamped - 0.60) / 0.45
-        return Float(0.36 + (0.20 * fraction))
+        // Lori's Voice intentionally uses three clearly separated speech speeds.
+        // The HTML stores 0.62 / 0.74 / 0.92 for backward compatibility with
+        // existing saved boards, but native iOS speech uses these fixed AVSpeech rates.
+        if webRate < 0.69 {
+            return 0.30   // Very slow
+        }
+        if webRate < 0.85 {
+            return 0.40   // Slower
+        }
+        return 0.52       // Normal
     }
 }

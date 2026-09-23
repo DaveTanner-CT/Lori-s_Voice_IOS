@@ -188,6 +188,7 @@
     border:none;cursor:pointer;}
   .btn.primary{background:var(--accent);color:#fff;}
   .btn.ghost{background:#f0ece4;color:var(--ink);}
+  .btn.speed-selected{background:var(--accent);color:#fff;border:2px solid var(--accent);box-shadow:0 0 0 3px rgba(59,125,110,.18);}
   .btn.danger{background:#fff;color:#c0392b;border:1.5px solid #e8c4be;}
   .btn:active{transform:scale(.97);}
   .menu-item{width:100%;text-align:left;font:inherit;font-size:16px;font-weight:700;
@@ -1027,12 +1028,24 @@ function fillVoices(){
 }
 document.getElementById("voiceSel").onchange=function(){ model.voiceURI=this.value; save(); };
 document.getElementById("voiceTest").onclick=function(){ speak("Hello. This is the voice I will use."); };
-function setRate(r){ model.rate=r; save(); markRate(); }
+function setRate(r){
+  model.rate=r;
+  save();
+  markRate();
+  // Speak immediately so the user/caregiver can hear the selected speed.
+  speak("This is the selected speaking speed.");
+}
 function markRate(){
-  var r=model.rate||0.9;
-  document.getElementById("spdVerySlow").classList.toggle("primary", r<0.69);
-  document.getElementById("spdSlow").classList.toggle("primary", r>=0.69 && r<0.85);
-  document.getElementById("spdNorm").classList.toggle("primary", r>=0.85);
+  var r=model.rate||0.92;
+  var verySlow=r<0.69;
+  var slower=r>=0.69 && r<0.85;
+  var normal=r>=0.85;
+  document.getElementById("spdVerySlow").classList.toggle("speed-selected", verySlow);
+  document.getElementById("spdSlow").classList.toggle("speed-selected", slower);
+  document.getElementById("spdNorm").classList.toggle("speed-selected", normal);
+  document.getElementById("spdVerySlow").setAttribute("aria-pressed", verySlow?"true":"false");
+  document.getElementById("spdSlow").setAttribute("aria-pressed", slower?"true":"false");
+  document.getElementById("spdNorm").setAttribute("aria-pressed", normal?"true":"false");
 }
 document.getElementById("spdVerySlow").onclick=function(){ setRate(0.62); };
 document.getElementById("spdSlow").onclick=function(){ setRate(0.74); };
