@@ -1072,13 +1072,19 @@ document.getElementById("doneTile").onclick=function(){
       return;
     }
 
-    // The native board file is confirmed written before we leave this editor.
-    editStack.pop();
-    if(editStack.length){
-      showEditor();
-      renderForks();
+    // The native board file is confirmed written before we leave the editor.
+    // For a sub-tile, close the entire editor instead of silently switching
+    // back to the parent tile. That makes Save sub-tile a clear one-step action
+    // and prevents the newly selected photo from appearing to "vanish" when
+    // the parent tile's photo field is shown.
+    if(isSubTile){
+      editStack=[];
+      editing=null;
+      document.getElementById("editScrim").classList.remove("show");
+      render();
       showSaveToast("Sub-tile saved ✓");
     }else{
+      editStack.pop();
       editing=null;
       document.getElementById("editScrim").classList.remove("show");
       render();
