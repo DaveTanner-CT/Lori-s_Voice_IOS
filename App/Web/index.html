@@ -158,6 +158,11 @@
   .arrow.show{display:flex;}
   #arrowL{left:18px;} #arrowR{right:18px;}
 
+  /* ---- save feedback ---- */
+  .save-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(12px);background:#16351f;color:white;font-weight:800;font-size:16px;padding:11px 18px;border-radius:999px;box-shadow:0 5px 18px rgba(0,0,0,.22);opacity:0;pointer-events:none;z-index:5000;transition:opacity .16s ease,transform .16s ease;}
+  .save-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  #doneTile.saving{transform:scale(.97);opacity:.9;}
+
   /* ---- modal ---- */
   .scrim{position:fixed;inset:0;background:rgba(30,27,22,.55);display:none;
     align-items:center;justify-content:center;padding:18px;z-index:50;}
@@ -327,6 +332,8 @@
     </div>
   </div>
 </div>
+
+<div id="saveToast" class="save-toast" role="status" aria-live="polite" aria-atomic="true">Saved ✓</div>
 
 <!-- Settings menu -->
 <div class="scrim" id="menuScrim">
@@ -863,6 +870,15 @@ document.addEventListener("keydown",function(e){
 /* ---------------- editor ---------------- */
 var editing=null;        // top of the edit stack: {tile, arr, index}
 var editStack=[];
+var saveToastTimer=null;
+function showSaveToast(message){
+  var t=document.getElementById("saveToast");
+  if(!t) return;
+  t.textContent=message||"Saved ✓";
+  t.classList.add("show");
+  clearTimeout(saveToastTimer);
+  saveToastTimer=setTimeout(function(){ t.classList.remove("show"); }, 1600);
+}
 function addTileTo(arr){
   var t={id:uid(),emoji:"",label:"",speak:"",color:PALETTE[arr.length%PALETTE.length],children:[]};
   arr.push(t); save();
@@ -961,6 +977,7 @@ function applySelectedPhoto(dataUrl){
   var tpw=document.getElementById("tilePhotoWrap"), tpp=document.getElementById("tilePhotoPreview");
   tpp.src=dataUrl; tpw.style.display="block";
   render();
+  showSaveToast("Photo added and saved ✓");
 }
 window.nativePhotoSelected=function(dataUrl){ applySelectedPhoto(dataUrl); };
 document.getElementById("tilePhotoRemove").onclick=function(){
@@ -994,7 +1011,21 @@ document.getElementById("delTile").onclick=function(){
     else { document.getElementById("editScrim").classList.remove("show"); render(); }
   });
 };
-document.getElementById("doneTile").onclick=function(){ backOrClose(); };
+document.getElementById("doneTile").onclick=function(){
+  var btn=this;
+  var isSubTile=editStack.length>1;
+  btn.disabled=true;
+  btn.classList.add("saving");
+  btn.textContent="Saved ✓";
+  save();
+  setTimeout(function(){
+    backOrClose();
+    showSaveToast(isSubTile ? "Sub-tile saved ✓" : "Tile saved ✓");
+    btn.disabled=false;
+    btn.classList.remove("saving");
+    btn.textContent="Done";
+  }, 450);
+};
 
 /* ---------------- settings ---------------- */
 document.getElementById("menuBtn").onclick=function(){
