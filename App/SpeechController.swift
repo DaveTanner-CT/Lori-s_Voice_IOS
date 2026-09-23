@@ -14,6 +14,8 @@ final class SpeechController {
 
         do {
             let session = AVAudioSession.sharedInstance()
+            // Playback keeps speech available even when the device's Ring/Silent switch
+            // is muted, which is important for an AAC communication app.
             try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
             try session.setActive(true)
         } catch {
@@ -24,7 +26,7 @@ final class SpeechController {
 
         let utterance = AVSpeechUtterance(string: text)
         utterance.pitchMultiplier = 1.0
-        utterance.rate = webRate < 0.85 ? 0.42 : AVSpeechUtteranceDefaultSpeechRate
+        utterance.rate = Self.nativeRate(fromWebRate: webRate)
 
         if let voiceIdentifier,
            !voiceIdentifier.isEmpty,
@@ -40,5 +42,13 @@ final class SpeechController {
         }
 
         synthesizer.speak(utterance)
+    }
+
+    private static func nativeRate(fromWebRate webRate: Double) -> Float {
+        // The web UI uses familiar 0.65-1.0 style values, while AVSpeechUtterance
+        // uses a different scale. Map it into a comfortable spoken range.
+        let clamped = min(max(webRate, 0.60), 1.05)
+        let fraction = (clamped - 0.60) / 0.45
+        return Float(0.36 + (0.20 * fraction))
     }
 }

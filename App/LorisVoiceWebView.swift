@@ -32,6 +32,15 @@ struct LorisVoiceWebView: UIViewRepresentable {
             ))
         }
 
+        if let appInfoJSON = Self.nativeAppInfoJSON() {
+            let source = "window.__LORIS_NATIVE_INFO__ = \(appInfoJSON);"
+            controller.addUserScript(WKUserScript(
+                source: source,
+                injectionTime: .atDocumentStart,
+                forMainFrameOnly: true
+            ))
+        }
+
         let configuration = WKWebViewConfiguration()
         configuration.userContentController = controller
         configuration.websiteDataStore = .default()
@@ -82,6 +91,17 @@ struct LorisVoiceWebView: UIViewRepresentable {
             ] as [String: Any]
         }
         guard let data = try? JSONSerialization.data(withJSONObject: voices),
+              let json = String(data: data, encoding: .utf8) else { return nil }
+        return json
+    }
+
+    private static func nativeAppInfoJSON() -> String? {
+        let info: [String: Any] = [
+            "version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0",
+            "build": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "",
+            "storage": BoardStore.shared.storageDescription
+        ]
+        guard let data = try? JSONSerialization.data(withJSONObject: info),
               let json = String(data: data, encoding: .utf8) else { return nil }
         return json
     }

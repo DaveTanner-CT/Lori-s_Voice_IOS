@@ -69,6 +69,10 @@
     box-shadow:0 2px 4px rgba(0,0,0,.04);color:var(--ink);flex:0 0 auto;
   }
   .iconbtn:active{transform:scale(.94);}
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .sw:focus-visible{
+    outline:4px solid #111; outline-offset:3px;
+  }
+  .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important;}
   .iconbtn.on{background:var(--accent);color:#fff;border-color:var(--accent);}
   .admin-only{display:none;}
   body.admin .admin-only{display:flex;}
@@ -243,16 +247,16 @@
 </head>
 <body>
 <div id="app">
-  <div id="banner"><span class="hint">Tap a tile to talk</span></div>
+  <div id="banner" role="status" aria-live="polite" aria-atomic="true" aria-label="Spoken phrase"><span class="hint">Tap a tile to talk</span></div>
 
   <div id="bar">
     <div id="title">TalkBoard</div>
-    <button id="kbBtn" title="Type to talk"><span class="kbico">⌨️</span><span class="kblabel">Type</span></button>
+    <button id="kbBtn" title="Type to talk" aria-label="Type a message to speak"><span class="kbico">⌨️</span><span class="kblabel">Type</span></button>
     <div class="bar-spacer"></div>
-    <button class="iconbtn admin-only" id="addPrimary" title="Add tile">＋</button>
-    <button class="iconbtn admin-only" id="menuBtn" title="Settings">⚙️</button>
-    <button class="iconbtn" id="infoBtn" title="Help & info">ℹ️</button>
-    <button class="iconbtn" id="lockBtn" title="Edit mode">🔓</button>
+    <button class="iconbtn admin-only" id="addPrimary" title="Add tile" aria-label="Add communication tile">＋</button>
+    <button class="iconbtn admin-only" id="menuBtn" title="Settings" aria-label="Board settings">⚙️</button>
+    <button class="iconbtn" id="infoBtn" title="Help & info" aria-label="Help and information">ℹ️</button>
+    <button class="iconbtn" id="lockBtn" title="Edit mode" aria-label="Enter edit mode">🔓</button>
   </div>
 
   <div id="stage">
@@ -261,8 +265,8 @@
       <span id="crumbLabel"></span>
     </div>
     <div id="grid"></div>
-    <button class="arrow" id="arrowL">‹</button>
-    <button class="arrow" id="arrowR">›</button>
+    <button class="arrow" id="arrowL" aria-label="Previous page">‹</button>
+    <button class="arrow" id="arrowR" aria-label="Next page">›</button>
     <div id="pager"></div>
   </div>
 </div>
@@ -357,7 +361,8 @@
     </div>
     <div class="field">
       <label>Speaking speed</label>
-      <div style="display:flex;gap:10px;">
+      <div style="display:flex;gap:8px;">
+        <button class="btn ghost" id="spdVerySlow" style="flex:1;">Very slow</button>
         <button class="btn ghost" id="spdSlow" style="flex:1;">Slower</button>
         <button class="btn ghost" id="spdNorm" style="flex:1;">Normal</button>
       </div>
@@ -370,6 +375,7 @@
     <button class="menu-item" id="exportBtn">⬇️  Save board to a file (backup)</button>
     <button class="menu-item" id="importBtn">⬆️  Load board from a file</button>
     <input type="file" id="importFile" accept="application/json" style="display:none;">
+    <button class="menu-item" id="blankBtn">＋  Start a new blank board</button>
     <button class="menu-item" id="resetBtn" style="color:#c0392b;">↺  Reset to the starter board</button>
     <button class="btn ghost" id="closeMenu" style="margin-top:6px;">Close</button>
   </div>
@@ -381,10 +387,11 @@
     <h2>Help &amp; Info</h2>
     <div class="helpsec"><b>Talking:</b> Tap any tile to say it out loud. A tile with a small number badge opens more choices inside it. Swipe left/right — or use the ‹ › arrows — for more pages. Tap the dark top bar to repeat the last phrase.</div>
     <div class="helpsec"><b>Typing:</b> Tap <b>⌨️ Type</b> at the top to open the keyboard, type a message, and tap <b>🔊 Speak</b>.</div>
-    <div class="helpsec"><b>Editing the board:</b> Tap the <b>🔓 lock</b> and enter the edit PIN. In edit mode you can add a tile (the dashed <b>＋ Add tile</b>), edit a tile (the <b>✏️</b> on each one), drag tiles to reorder, add sub-tiles inside a tile, and delete tiles. Tap the lock again to leave edit mode.</div>
+    <div class="helpsec"><b>Editing the board:</b> Tap the <b>🔓 lock</b> and enter the edit PIN. In edit mode you can add a tile (the dashed <b>＋ Add tile</b>), edit a tile (the <b>✏️</b> on each one), drag tiles to reorder, add sub-tiles inside a tile, and delete tiles. Tap the lock again to leave edit mode. The communication board itself never requires a PIN and remains immediately available whenever the app opens.</div>
     <div class="helpsec"><b>Settings (⚙️, in edit mode):</b> Change the board name, the greeting name, the color theme, tiles per page, the voice and speaking speed, and back up or restore the board.</div>
     <div class="helpsec"><b>Natural voice on iPad:</b> Settings → Accessibility → Spoken Content → Voices → download an “Enhanced” voice, then choose it in ⚙️ → Voice.</div>
     <div class="helpsec"><b>Backup / copy to another device:</b> ⚙️ → “Save board to a file”, then “Load board from a file” on the other device.</div>
+    <div class="helpsec" id="appDiagnostics"><b>App:</b> Lori's Voice</div>
 
     <div class="field">
       <label>Edit PIN</label>
@@ -450,8 +457,8 @@
     <button id="kbClose">‹ Board</button>
     <div id="kbTitle">Type to talk</div>
   </div>
-  <div id="kbText" onclick="kbReSpeak()"><span class="ph">Type here, then tap Speak</span></div>
-  <button id="kbSpeak">🔊 Speak</button>
+  <div id="kbText" onclick="kbReSpeak()" role="textbox" aria-label="Typed message. Tap to repeat the message." aria-live="polite"><span class="ph">Type here, then tap Speak</span></div>
+  <button id="kbSpeak" aria-label="Speak typed message">🔊 Speak</button>
   <div id="kbKeys"></div>
 </div>
 
@@ -658,6 +665,7 @@ function render(){
   document.body.classList.toggle("admin", admin);
   document.getElementById("lockBtn").textContent = admin ? "🔒" : "🔓";
   document.getElementById("lockBtn").classList.toggle("on", admin);
+  document.getElementById("lockBtn").setAttribute("aria-label", admin ? "Leave edit mode" : "Enter edit mode");
   document.getElementById("title").textContent = model.title;
   document.title = model.title;
   applyTheme();
@@ -680,7 +688,8 @@ function render(){
   if(inSub){
     var bk=document.createElement("button");
     bk.className="tile back-tile";
-    bk.innerHTML='<div class="emoji">↩︎</div><div class="label">Back to<br>main menu</div>';
+    bk.setAttribute("aria-label","Back to main menu");
+    bk.innerHTML='<div class="emoji" aria-hidden="true">↩︎</div><div class="label">Back to<br>main menu</div>';
     bk.onclick=function(){ if(suppressClick){ suppressClick=false; return; } var rp=pageStack.length?pageStack[0]:0; path=[]; pageStack=[]; page=rp; render(); };
     grid.appendChild(bk);
   }
@@ -692,12 +701,15 @@ function render(){
     var realIndex=start+idx;
     var el=document.createElement("button");
     el.className="tile"+(tile.speaking?" speaking":"");
+    var a11yLabel=(tile.label||tile.speak||"Communication tile");
+    if(tile.children&&tile.children.length) a11yLabel += ", opens "+tile.children.length+" more choices";
+    el.setAttribute("aria-label",a11yLabel);
     el.style.background=tile.color;
     el.style.color=textOn(tile.color);
     var fork = (tile.children&&tile.children.length) ? '<div class="fork-dot">'+tile.children.length+'</div>' : '';
     var face = tile.image
-      ? '<img class="tile-img" src="'+tile.image+'" alt="">'
-      : '<div class="emoji">'+(tile.emoji||"·")+'</div>';
+      ? '<img class="tile-img" src="'+tile.image+'" alt="" aria-hidden="true">'
+      : '<div class="emoji" aria-hidden="true">'+(tile.emoji||"·")+'</div>';
     el.innerHTML='<div class="edit-pencil">✏️</div>'+fork+ face +
       '<div class="label">'+escapeHtml(tile.label)+'</div>';
     el.dataset.idx=realIndex;
@@ -878,8 +890,9 @@ function showEditor(){
   var sw=document.getElementById("swatches"); sw.innerHTML="";
   PALETTE.forEach(function(col){
     var s=document.createElement("div"); s.className="sw"+(col===tile.color?" sel":"");
-    s.style.background=col;
+    s.style.background=col; s.tabIndex=0; s.setAttribute("role","button"); s.setAttribute("aria-label","Choose tile color "+col);
     s.onclick=function(){ tile.color=col; save(); document.querySelectorAll("#swatches .sw").forEach(function(x){x.classList.remove("sel");}); s.classList.add("sel"); };
+    s.onkeydown=function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); s.click(); } };
     sw.appendChild(s);
   });
   renderForks();
@@ -1016,12 +1029,14 @@ document.getElementById("voiceSel").onchange=function(){ model.voiceURI=this.val
 document.getElementById("voiceTest").onclick=function(){ speak("Hello. This is the voice I will use."); };
 function setRate(r){ model.rate=r; save(); markRate(); }
 function markRate(){
-  var slow=(model.rate||0.9)<0.85;
-  document.getElementById("spdSlow").classList.toggle("primary", slow);
-  document.getElementById("spdNorm").classList.toggle("primary", !slow);
+  var r=model.rate||0.9;
+  document.getElementById("spdVerySlow").classList.toggle("primary", r<0.69);
+  document.getElementById("spdSlow").classList.toggle("primary", r>=0.69 && r<0.85);
+  document.getElementById("spdNorm").classList.toggle("primary", r>=0.85);
 }
-document.getElementById("spdSlow").onclick=function(){ setRate(0.72); };
-document.getElementById("spdNorm").onclick=function(){ setRate(0.9); };
+document.getElementById("spdVerySlow").onclick=function(){ setRate(0.62); };
+document.getElementById("spdSlow").onclick=function(){ setRate(0.74); };
+document.getElementById("spdNorm").onclick=function(){ setRate(0.92); };
 function setSize(n){ model.pageSize=n; page=0; save(); markSize(); render(); }
 function markSize(){
   document.getElementById("size6").classList.toggle("primary",(model.pageSize||6)===6);
@@ -1050,15 +1065,23 @@ function buildThemeSwatches(){
   Object.keys(THEMES).forEach(function(k){
     var s=document.createElement("div");
     s.className="sw"+(((model.theme||"teal")===k)?" sel":"");
-    s.style.background=THEMES[k].accent; s.title=THEMES[k].name;
+    s.style.background=THEMES[k].accent; s.title=THEMES[k].name; s.tabIndex=0; s.setAttribute("role","button"); s.setAttribute("aria-label","Use "+THEMES[k].name+" theme");
     s.onclick=function(){ model.theme=k; save(); applyTheme();
       document.querySelectorAll("#themeSwatches .sw").forEach(function(x){x.classList.remove("sel");}); s.classList.add("sel"); };
+    s.onkeydown=function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); s.click(); } };
     wrap.appendChild(s);
   });
 }
 document.getElementById("closeMenu").onclick=function(){ document.getElementById("menuScrim").classList.remove("show"); };
 document.getElementById("fPin").oninput=function(){ this.value=this.value.replace(/[^0-9]/g,""); model.pin=this.value; save(); };
 document.getElementById("infoBtn").onclick=function(){
+  var ni=window.__LORIS_NATIVE_INFO__||{};
+  var diag=document.getElementById("appDiagnostics");
+  if(diag){
+    var ver=ni.version||"Web"; var build=ni.build?" (build "+ni.build+")":"";
+    var storage=ni.storage||"This browser";
+    diag.innerHTML="<b>App:</b> Lori's Voice "+escapeHtml(ver)+escapeHtml(build)+" &nbsp;·&nbsp; <b>Storage:</b> "+escapeHtml(storage);
+  }
   var notes=document.getElementById("infoNotes");
   notes.value=model.infoNotes||"";
   notes.readOnly=!admin;
@@ -1075,9 +1098,35 @@ document.getElementById("infoNotes").oninput=function(){ if(!admin) return; mode
 document.getElementById("closeInfo").onclick=function(){ document.getElementById("infoScrim").classList.remove("show"); };
 document.getElementById("privacyLink").onclick=function(){ document.getElementById("privacyScrim").classList.add("show"); };
 document.getElementById("closePrivacy").onclick=function(){ document.getElementById("privacyScrim").classList.remove("show"); };
+var BACKUP_FORMAT="loris-voice-backup";
+var BACKUP_VERSION=2;
+function backupEnvelope(){
+  return {format:BACKUP_FORMAT,version:BACKUP_VERSION,exportedAt:new Date().toISOString(),model:model};
+}
+function validTile(t,depth){
+  if(!t || typeof t!=="object" || depth>8) return false;
+  if(typeof t.label!=="string" || typeof t.speak!=="string") return false;
+  if(!Array.isArray(t.children) || t.children.length>250) return false;
+  for(var i=0;i<t.children.length;i++) if(!validTile(t.children[i],depth+1)) return false;
+  return true;
+}
+function validModel(d){
+  if(!d || typeof d!=="object" || !Array.isArray(d.tiles) || d.tiles.length>500) return false;
+  for(var i=0;i<d.tiles.length;i++) if(!validTile(d.tiles[i],0)) return false;
+  return true;
+}
+function extractBackupModel(parsed){
+  if(parsed && parsed.format===BACKUP_FORMAT){
+    if(typeof parsed.version!=="number" || parsed.version>BACKUP_VERSION) throw new Error("This backup was created by a newer version of Lori's Voice.");
+    if(!validModel(parsed.model)) throw new Error("The backup does not contain a valid communication board.");
+    return parsed.model;
+  }
+  if(validModel(parsed)) return parsed;
+  throw new Error("The selected file is not a valid Lori's Voice backup.");
+}
 document.getElementById("exportBtn").onclick=function(){
-  var filename=(model.title||"talkboard").replace(/\s+/g,"_")+".json";
-  var json=JSON.stringify(model,null,2);
+  var filename=(model.title||"Loris_Voice").replace(/[^a-z0-9_-]+/gi,"_")+"_backup.json";
+  var json=JSON.stringify(backupEnvelope(),null,2);
   if(NATIVE_IOS){ nativePost({action:"exportBoard", json:json, filename:filename}); return; }
   var blob=new Blob([json],{type:"application/json"});
   var a=document.createElement("a"); a.href=URL.createObjectURL(blob);
@@ -1089,15 +1138,16 @@ document.getElementById("importBtn").onclick=function(){
 };
 function importBoardJson(jsonText){
   try{
-    var d=typeof jsonText==="string" ? JSON.parse(jsonText) : jsonText;
-    if(d && Array.isArray(d.tiles)){
-      model=d; path=[]; pageStack=[]; page=0; save();
-      document.getElementById("menuScrim").classList.remove("show"); render();
-      return true;
-    }
-  }catch(err){}
-  alert("That file couldn't be read.");
-  return false;
+    var parsed=typeof jsonText==="string" ? JSON.parse(jsonText) : jsonText;
+    var d=extractBackupModel(parsed);
+    model=d; path=[]; pageStack=[]; page=0; save();
+    document.getElementById("menuScrim").classList.remove("show"); render();
+    setTimeout(function(){ alert("Backup restored successfully."); },50);
+    return true;
+  }catch(err){
+    alert(err&&err.message ? err.message : "That backup couldn't be read.");
+    return false;
+  }
 }
 window.nativeImportBoard=function(jsonText){ importBoardJson(jsonText); };
 document.getElementById("importFile").onchange=function(e){
@@ -1105,6 +1155,17 @@ document.getElementById("importFile").onchange=function(e){
   var r=new FileReader();
   r.onload=function(){ importBoardJson(r.result); };
   r.readAsText(f);
+};
+function blankBoard(){
+  var b=starter();
+  b.title="My Voice"; b.owner=""; b.tiles=[];
+  return b;
+}
+document.getElementById("blankBtn").onclick=function(){
+  askConfirm("Start a new blank board? Save a backup first if you may want this board later.", function(){
+    model=blankBoard(); path=[]; pageStack=[]; page=0; save();
+    document.getElementById("menuScrim").classList.remove("show"); render();
+  });
 };
 document.getElementById("resetBtn").onclick=function(){
   askConfirm("Reset to the starter board? Your changes will be lost.", function(){
@@ -1185,6 +1246,7 @@ function buildKeys(){
     r.forEach(function(ch){
       var k=document.createElement("button"); k.className="kbkey";
       k.textContent = /[a-z]/.test(ch) ? ch.toUpperCase() : ch;
+      k.setAttribute("aria-label", /[a-z]/.test(ch) ? "Letter "+ch.toUpperCase() : ch);
       k.onclick=function(){ kbInsert(ch); };
       row.appendChild(k);
     });
@@ -1192,10 +1254,12 @@ function buildKeys(){
   });
   var arow=document.createElement("div"); arow.className="kbrow";
   var back=document.createElement("button"); back.className="kbkey action wide"; back.textContent="⌫";
+  back.setAttribute("aria-label","Backspace");
   back.onclick=kbBackspace;
   var space=document.createElement("button"); space.className="kbkey space"; space.textContent="space";
   space.onclick=function(){ kbInsert(" "); };
   var clr=document.createElement("button"); clr.className="kbkey action wide"; clr.textContent="Clear";
+  clr.setAttribute("aria-label","Clear typed message");
   clr.onclick=kbClear;
   arow.appendChild(back); arow.appendChild(space); arow.appendChild(clr);
   keys.appendChild(arow);
@@ -1213,6 +1277,10 @@ document.addEventListener("keydown",function(e){
   if(e.key===" "){ e.preventDefault(); kbInsert(" "); return; }
   if(e.key && e.key.length===1 && /[a-z0-9 ,.?!'\-]/i.test(e.key)){ e.preventDefault(); kbInsert(e.key.toLowerCase()); }
 });
+
+/* ---------------- lifecycle safety ---------------- */
+window.addEventListener("pagehide",function(){ save(); });
+document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="hidden") save(); });
 
 /* ---------------- speech setup ---------------- */
 var primed=false;
