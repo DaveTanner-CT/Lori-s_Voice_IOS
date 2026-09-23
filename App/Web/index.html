@@ -122,7 +122,8 @@
     25%{box-shadow:0 0 0 6px rgba(255,255,255,.55), var(--shadow);}
     100%{box-shadow:var(--shadow);}
   }
-  .tile .emoji{font-size:clamp(40px,9vw,86px);line-height:1;}
+   .tile .emoji{font-size:var(--tile-emoji-size,clamp(40px,9vw,86px));line-height:1;max-width:92%;overflow:visible;}
+  .tile .tile-img{width:var(--tile-photo-size,clamp(52px,15vw,110px));height:var(--tile-photo-size,clamp(52px,15vw,110px));}
   .tile .label{font-size:clamp(24px,4.8vw,44px);font-weight:800;text-align:center;
     line-height:1.05;text-shadow:0 1px 2px rgba(0,0,0,.18);}
   .tile .fork-dot{position:absolute;top:12px;right:14px;font-size:15px;font-weight:900;
@@ -254,7 +255,7 @@
   .info-footer .credit a{color:var(--accent);font-weight:700;text-decoration:none;}
   .info-footer .credit a:hover{text-decoration:underline;}
   .linklike{background:none;border:none;color:var(--accent);font:inherit;font-weight:800;font-size:15px;cursor:pointer;padding:8px 0 0;text-decoration:underline;}
-  .tile-img{width:clamp(52px,15vw,110px);height:clamp(52px,15vw,110px);object-fit:cover;border-radius:16px;box-shadow:0 2px 6px rgba(0,0,0,.22);}
+  .tile-img{object-fit:cover;border-radius:16px;box-shadow:0 2px 6px rgba(0,0,0,.22);}
   #tilePhotoPreview{max-width:120px;max-height:120px;object-fit:cover;border-radius:12px;border:1px solid var(--line);display:block;margin-bottom:8px;}
 </style>
 </head>
@@ -375,6 +376,12 @@
       <div class="hintline" id="pageSizeHint">Fewer, bigger tiles are easier to hit on harder days.</div>
     </div>
     <div class="field">
+      <label for="iconSizeSlider">Tile icon size <span id="iconSizeValue" style="float:right;font-weight:800;color:var(--accent);">100%</span></label>
+      <input type="range" id="iconSizeSlider" min="100" max="175" step="5" value="100" aria-label="Tile icon size percentage" style="width:100%;accent-color:var(--accent);">
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:2px;"><span>100%</span><span>175%</span></div>
+      <div class="hintline" id="iconSizeHint">Makes tile symbols and photos larger while keeping room for the word label.</div>
+    </div>
+    <div class="field">
       <label>Voice</label>
       <select id="voiceSel" style="width:100%;font:inherit;font-size:16px;padding:11px;border:1.5px solid var(--line);border-radius:12px;background:#faf8f3;"></select>
       <button class="btn ghost" id="voiceTest" style="margin-top:10px;width:100%;">▶︎ Test this voice</button>
@@ -417,7 +424,7 @@
     <div class="info-card">
       <h3>Caregiver / editor help</h3>
       <div class="helpsec"><b>Edit the board:</b> Tap the <b>🔓 lock</b> and enter the edit PIN. You can add, edit, reorder, or delete tiles and add sub-tiles. Tap the lock again to leave edit mode.</div>
-      <div class="helpsec"><b>Settings:</b> In edit mode, tap <b>⚙️</b> to change the board name, greeting, greeting icon, color theme, tiles per page, voice, speaking speed, and backup/restore options.</div>
+      <div class="helpsec"><b>Settings:</b> In edit mode, tap <b>⚙️</b> to change the board name, greeting, greeting icon, color theme, tiles per page, tile icon size, voice, speaking speed, and backup/restore options.</div>
       <div class="helpsec"><b>Natural voice:</b> On iPad, go to Settings → Accessibility → Spoken Content → Voices, download an Enhanced voice, then select it in Lori's Voice Settings.</div>
       <div class="helpsec"><b>Important:</b> The communication board itself never requires a PIN and is immediately available whenever the app opens.</div>
     </div>
@@ -514,6 +521,7 @@ function starter(){
   return {
     title:"Lori's Voice",
     pageSize:6,
+    iconSize:100,
     tiles:[
       {id:uid(),emoji:"🍽️",label:"Hungry",speak:"I'm hungry",color:"#c2683b",children:[
         {id:uid(),emoji:"🥗",label:"Chicken salad",speak:"Do we have any chicken salad?",color:"#7a8a3a",children:[]},
@@ -761,10 +769,24 @@ function render(){
   var start=page*perPage;
   var slice=arr.slice(start, start+perPage);
 
+  // Accessibility setting: enlarge tile symbols/photos without letting them crowd out labels.
+  var iconPct=Math.max(100,Math.min(175,Number(model.iconSize)||100));
+  var iconScale=iconPct/100;
+  var baseEmoji=Math.min(86,Math.max(40,window.innerWidth*0.09));
+  var basePhoto=Math.min(110,Math.max(52,window.innerWidth*0.15));
+  // In compact landscape layouts, use a slightly tighter ceiling to preserve the label.
+  var compactHeight=window.innerHeight<500;
+  var emojiCap=compactHeight ? 88 : (PAGE===4 ? 155 : 135);
+  var photoCap=compactHeight ? 92 : (PAGE===4 ? 175 : 150);
+  var emojiPx=Math.round(Math.min(baseEmoji*iconScale,emojiCap));
+  var photoPx=Math.round(Math.min(basePhoto*iconScale,photoCap));
+
   slice.forEach(function(tile, idx){
     var realIndex=start+idx;
     var el=document.createElement("button");
     el.className="tile"+(tile.speaking?" speaking":"");
+    el.style.setProperty("--tile-emoji-size",emojiPx+"px");
+    el.style.setProperty("--tile-photo-size",photoPx+"px");
     var a11yLabel=(tile.label||tile.speak||"Communication tile");
     if(tile.children&&tile.children.length) a11yLabel += ", opens "+tile.children.length+" more choices";
     el.setAttribute("aria-label",a11yLabel);
@@ -1161,7 +1183,7 @@ document.getElementById("menuBtn").onclick=function(){
   document.getElementById("fPin").value=model.pin||"1234";
   buildGreetingIconPicks();
   buildThemeSwatches();
-  markSize(); fillVoices(); markRate();
+  markSize(); markIconSize(); fillVoices(); markRate();
   document.getElementById("menuScrim").classList.add("show");
 };
 function fillVoices(){
@@ -1225,6 +1247,25 @@ function markSize(){
 }
 document.getElementById("size6").onclick=function(){ setSize(6); };
 document.getElementById("size4").onclick=function(){ setSize(4); };
+function markIconSize(){
+  var pct=Math.max(100,Math.min(175,Number(model.iconSize)||100));
+  model.iconSize=pct;
+  var slider=document.getElementById("iconSizeSlider");
+  var out=document.getElementById("iconSizeValue");
+  if(slider) slider.value=String(pct);
+  if(out) out.textContent=pct+"%";
+}
+document.getElementById("iconSizeSlider").oninput=function(){
+  var pct=Math.max(100,Math.min(175,Number(this.value)||100));
+  model.iconSize=pct;
+  document.getElementById("iconSizeValue").textContent=pct+"%";
+  save();
+  render();
+};
+document.getElementById("iconSizeSlider").onchange=function(){
+  var pct=Math.max(100,Math.min(175,Number(this.value)||100));
+  showSaveToast("Tile icon size "+pct+"% ✓");
+};
 document.getElementById("fTitle").oninput=function(){ model.title=this.value; save(); document.getElementById("title").textContent=model.title; document.title=model.title; };
 document.getElementById("fOwner").oninput=function(){
   model.owner=this.value; save();

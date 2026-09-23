@@ -1,16 +1,12 @@
-# Lori's Voice Build 20
+# Lori's Voice — Build 21 replacement files
 
 Replace only these files in the repository:
 
 - `App/Web/index.html`
 - `project.yml`
 
-Build 20 polishes Help & Info without changing board, tile, photo, speech, or save behavior.
+## Build 21 change
 
-Changes:
-- reorganized Help & Info into Quick help, Caregiver/editor help, and App & storage sections
-- added version/build, local storage, selected voice, speaking speed, and last-backup diagnostics
-- records the last backup time when Save board to a file is used
-- added Scripting for Schools support email and website
-- updated in-app privacy language to describe native private local storage and local photo storage accurately
-- retains immediate access to the communication board with no automatic PIN/lock behavior
+Adds a **Tile icon size** accessibility slider under Settings. The range is 100%–175% in 5% steps. It enlarges both emoji/symbol icons and uploaded tile photos. The renderer applies compact-screen caps so larger icons do not crowd out the tile label on smaller/landscape screens.
+
+No speech, photo-save, sub-tile, PIN, or board persistence logic was changed.
