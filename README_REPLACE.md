@@ -1,18 +1,12 @@
-# Lori's Voice - Build 18 replacement files
+# Lori's Voice Build 19
 
-Replace only these files in the repository:
+Replace only:
+- `App/Web/index.html`
+- root `project.yml`
 
-1. `App/Web/index.html`
-2. `project.yml`
-
-Build 18 fixes two related sub-tile interaction bugs:
-
-- The tap debounce now applies only to repeated taps on the same tile. Opening a parent tile no longer causes the first tap on a sub-tile to be ignored.
-- The delayed parent "speaking" render no longer rebuilds the newly opened sub-board. This prevents a newly uploaded sub-tile image from being briefly replaced/interrupted before it finishes displaying.
-
-Expected behavior:
-
-- Save a new sub-tile with a photo.
-- Open the parent tile.
-- The sub-tile photo should be visible immediately.
-- The first tap on the sub-tile should speak immediately.
+Changes:
+- Adds an editable Greeting icon setting with common emoji choices, a None option, and a custom emoji/text field.
+- Greeting updates immediately when the icon changes.
+- Fixes Tiles per page visual state so 6 tiles / 4 bigger clearly shows which option is selected.
+- Adds aria-pressed state and a confirmation toast for tile count changes.
+- Build number bumped to 19.

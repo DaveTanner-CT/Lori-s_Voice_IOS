@@ -194,6 +194,7 @@
   .btn.primary{background:var(--accent);color:#fff;}
   .btn.ghost{background:#f0ece4;color:var(--ink);}
   .btn.speed-selected{background:var(--accent);color:#fff;border:2px solid var(--accent);box-shadow:0 0 0 3px rgba(59,125,110,.18);}
+  .btn.size-selected{background:var(--accent);color:#fff;border:2px solid var(--accent);box-shadow:0 0 0 3px rgba(59,125,110,.18);}
   .btn.danger{background:#fff;color:#c0392b;border:1.5px solid #e8c4be;}
   .btn:active{transform:scale(.97);}
   .menu-item{width:100%;text-align:left;font:inherit;font-size:16px;font-weight:700;
@@ -349,6 +350,12 @@
       <div class="hintline">Shown in the greeting, e.g. “Good morning, Lori 💗”.</div>
     </div>
     <div class="field">
+      <label>Greeting icon</label>
+      <input type="text" id="fGreetingIcon" placeholder="💗" maxlength="8" inputmode="text" aria-label="Greeting icon">
+      <div class="picks" id="greetingIconPicks" style="margin-top:8px;"></div>
+      <div class="hintline">Choose the symbol shown after the name. You can also type or paste another emoji.</div>
+    </div>
+    <div class="field">
       <label>Color theme</label>
       <div class="swatches" id="themeSwatches"></div>
       <div class="hintline">Sets the app’s accent color — buttons, the keyboard, highlights. Tiles keep their own colors.</div>
@@ -359,7 +366,7 @@
         <button class="btn ghost" id="size6" style="flex:1;">6 tiles</button>
         <button class="btn ghost" id="size4" style="flex:1;">4 bigger</button>
       </div>
-      <div class="hintline">Fewer, bigger tiles are easier to hit on harder days.</div>
+      <div class="hintline" id="pageSizeHint">Fewer, bigger tiles are easier to hit on harder days.</div>
     </div>
     <div class="field">
       <label>Voice</label>
@@ -1124,7 +1131,9 @@ document.getElementById("doneTile").onclick=function(){
 document.getElementById("menuBtn").onclick=function(){
   document.getElementById("fTitle").value=model.title;
   document.getElementById("fOwner").value=model.owner||"Lori";
+  document.getElementById("fGreetingIcon").value=(model.greetingIcon===undefined?"💗":model.greetingIcon);
   document.getElementById("fPin").value=model.pin||"1234";
+  buildGreetingIconPicks();
   buildThemeSwatches();
   markSize(); fillVoices(); markRate();
   document.getElementById("menuScrim").classList.add("show");
@@ -1174,16 +1183,54 @@ function markRate(){
 document.getElementById("spdVerySlow").onclick=function(){ setRate(0.62); };
 document.getElementById("spdSlow").onclick=function(){ setRate(0.74); };
 document.getElementById("spdNorm").onclick=function(){ setRate(0.92); };
-function setSize(n){ model.pageSize=n; page=0; save(); markSize(); render(); }
+function setSize(n){
+  model.pageSize=n; page=0; save(); markSize(); render();
+  showSaveToast(n===4?"4 bigger tiles selected ✓":"6 tiles selected ✓");
+}
 function markSize(){
-  document.getElementById("size6").classList.toggle("primary",(model.pageSize||6)===6);
-  document.getElementById("size4").classList.toggle("primary",(model.pageSize||6)===4);
+  var n=(model.pageSize||6);
+  var b6=document.getElementById("size6"), b4=document.getElementById("size4");
+  b6.classList.toggle("size-selected",n===6);
+  b4.classList.toggle("size-selected",n===4);
+  b6.setAttribute("aria-pressed",n===6?"true":"false");
+  b4.setAttribute("aria-pressed",n===4?"true":"false");
+  var hint=document.getElementById("pageSizeHint");
+  if(hint) hint.textContent=(n===4?"4 bigger tiles selected.":"6 tiles selected.")+" Fewer, bigger tiles are easier to hit on harder days.";
 }
 document.getElementById("size6").onclick=function(){ setSize(6); };
 document.getElementById("size4").onclick=function(){ setSize(4); };
 document.getElementById("fTitle").oninput=function(){ model.title=this.value; save(); document.getElementById("title").textContent=model.title; document.title=model.title; };
 document.getElementById("fOwner").oninput=function(){
   model.owner=this.value; save();
+  var b=document.getElementById("banner");
+  if(b.classList.contains("greet")) b.textContent=greeting();
+};
+var GREETING_ICONS=["💗","❤️","💙","💜","🌸","⭐️","😊",""];
+function setGreetingIcon(icon){
+  model.greetingIcon=icon;
+  document.getElementById("fGreetingIcon").value=icon;
+  save(); buildGreetingIconPicks();
+  var b=document.getElementById("banner");
+  if(b.classList.contains("greet")) b.textContent=greeting();
+}
+function buildGreetingIconPicks(){
+  var wrap=document.getElementById("greetingIconPicks"); if(!wrap) return;
+  wrap.innerHTML="";
+  var current=(model.greetingIcon===undefined?"💗":model.greetingIcon);
+  GREETING_ICONS.forEach(function(icon){
+    var btn=document.createElement("button");
+    btn.type="button"; btn.className="pick";
+    btn.textContent=icon||"None";
+    if(!icon){ btn.style.width="64px"; btn.style.fontSize="13px"; }
+    btn.setAttribute("aria-label",icon?"Use "+icon+" as greeting icon":"Use no greeting icon");
+    btn.setAttribute("aria-pressed",current===icon?"true":"false");
+    if(current===icon){ btn.style.borderColor="var(--accent)"; btn.style.boxShadow="0 0 0 2px var(--accent)"; }
+    btn.onclick=function(){ setGreetingIcon(icon); };
+    wrap.appendChild(btn);
+  });
+}
+document.getElementById("fGreetingIcon").oninput=function(){
+  model.greetingIcon=this.value; save(); buildGreetingIconPicks();
   var b=document.getElementById("banner");
   if(b.classList.contains("greet")) b.textContent=greeting();
 };
@@ -1438,7 +1485,8 @@ if(!NATIVE_IOS){
 function greeting(){
   var h=new Date().getHours();
   var part = h<12 ? "Good morning" : (h<17 ? "Good afternoon" : "Good evening");
-  return part+", "+(model.owner||OWNER)+" 💗";
+  var icon=(model.greetingIcon===undefined?"💗":model.greetingIcon);
+  return part+", "+(model.owner||OWNER)+(icon?" "+icon:"");
 }
 (function(){
   var b=document.getElementById("banner");
