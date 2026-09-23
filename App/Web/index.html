@@ -523,57 +523,31 @@ function starter(){
     pageSize:6,
     iconSize:100,
     tiles:[
-      {id:uid(),emoji:"🍽️",label:"Hungry",speak:"I'm hungry",color:"#c2683b",children:[
-        {id:uid(),emoji:"🥗",label:"Chicken salad",speak:"Do we have any chicken salad?",color:"#7a8a3a",children:[]},
-        {id:uid(),emoji:"🍉",label:"Watermelon",speak:"I'd love some watermelon",color:"#a14e72",children:[]},
-        {id:uid(),emoji:"🍞",label:"Good bread",speak:"Do we have any good bread, maybe sourdough?",color:"#b8843a",children:[]},
-        {id:uid(),emoji:"🍿",label:"Popcorn",speak:"Can we make some popcorn?",color:"#5b6bbf",children:[]}
+      {id:uid(),emoji:"👍",label:"Yes",speak:"Yes, please.",color:"#3b7d6e",children:[]},
+      {id:uid(),emoji:"👎",label:"No",speak:"No, thank you.",color:"#9b5b4c",children:[]},
+      {id:uid(),emoji:"🆘",label:"Help",speak:"Could you please help me?",color:"#5b6bbf",children:[]},
+      {id:uid(),emoji:"🚻",label:"Bathroom",speak:"I need to use the bathroom, please.",color:"#4a8fb0",children:[]},
+      {id:uid(),emoji:"🍽️",label:"Food",speak:"I'm feeling hungry.",color:"#c2683b",children:[
+        {id:uid(),emoji:"🥪",label:"Something to eat",speak:"Could I please have something to eat?",color:"#7a8a3a",children:[]},
+        {id:uid(),emoji:"🍎",label:"Snack",speak:"May I have a snack, please?",color:"#b8843a",children:[]},
+        {id:uid(),emoji:"🥤",label:"Drink",speak:"May I have a drink, please?",color:"#4a8fb0",children:[]}
       ]},
-      {id:uid(),emoji:"🆘",label:"Help",speak:"I need help",color:"#5b6bbf",children:[]},
-      {id:uid(),emoji:"💧",label:"Thirsty",speak:"I'm thirsty",color:"#4a8fb0",children:[
-        {id:uid(),emoji:"🥤",label:"Water bottle",speak:"Can I have my water bottle?",color:"#4a8fb0",children:[]},
-        {id:uid(),emoji:"🧃",label:"Juice",speak:"I'd like some juice",color:"#b8843a",children:[]}
+      {id:uid(),emoji:"💭",label:"How I feel",speak:"I'd like to tell you how I'm feeling.",color:"#5b6bbf",children:[
+        {id:uid(),emoji:"😊",label:"Good",speak:"I'm feeling good, thank you.",color:"#3b7d6e",children:[]},
+        {id:uid(),emoji:"😴",label:"Tired",speak:"I'm feeling tired. I'd like to rest, please.",color:"#6a6f8c",children:[]},
+        {id:uid(),emoji:"😣",label:"Hurt",speak:"I'm hurting. Could you please help me?",color:"#c2683b",children:[]},
+        {id:uid(),emoji:"💗",label:"Worried",speak:"I'm feeling worried. Could you stay with me, please?",color:"#9b5b4c",children:[]}
       ]},
-      {id:uid(),emoji:"❤️",label:"I love you",speak:"I love you",color:"#a14e72",children:[]},
-      {id:uid(),emoji:"🙏",label:"Thank you",speak:"Thank you",color:"#b8843a",children:[]},
-      {id:uid(),emoji:"😣",label:"Pain",speak:"I'm in pain",color:"#c2683b",children:[
-        {id:uid(),emoji:"🙂",label:"A little",speak:"It hurts a little",color:"#7a8a3a",children:[]},
-        {id:uid(),emoji:"😣",label:"A lot",speak:"It hurts a lot",color:"#c2683b",children:[]},
-        {id:uid(),emoji:"⬆️",label:"Worse",speak:"The pain is getting worse",color:"#9b5b4c",children:[]},
-        {id:uid(),emoji:"💊",label:"Medicine",speak:"I need my pain medicine",color:"#5b6bbf",children:[]}
+      {id:uid(),emoji:"🛏️",label:"Comfort",speak:"Could you help me get comfortable, please?",color:"#7a8a3a",children:[
+        {id:uid(),emoji:"⬆️",label:"Sit up",speak:"Could you help me sit up, please?",color:"#7a8a3a",children:[]},
+        {id:uid(),emoji:"⬇️",label:"Lie down",speak:"I'd like to lie down, please.",color:"#5b6bbf",children:[]},
+        {id:uid(),emoji:"🛌",label:"Pillow",speak:"Could you please adjust my pillow?",color:"#a14e72",children:[]}
       ]},
-      {id:uid(),emoji:"👍",label:"Yes",speak:"Yes",color:"#3b7d6e",children:[]},
-      {id:uid(),emoji:"👎",label:"No",speak:"No",color:"#9b5b4c",children:[]},
-      {id:uid(),emoji:"🛏️",label:"Move me",speak:"Please help me move",color:"#7a8a3a",children:[
-        {id:uid(),emoji:"⬆️",label:"Sit up",speak:"I'd like to sit up",color:"#7a8a3a",children:[]},
-        {id:uid(),emoji:"⬇️",label:"Lie down",speak:"I'd like to lie down",color:"#5b6bbf",children:[]},
-        {id:uid(),emoji:"🌳",label:"Sit outside",speak:"Can we sit outside?",color:"#4a8fb0",children:[]},
-        {id:uid(),emoji:"🛌",label:"Pillow",speak:"Can you fix my pillow?",color:"#a14e72",children:[]},
-        {id:uid(),emoji:"🌰",label:"Acorn",speak:"I'd like to use the Acorn",color:"#b8843a",children:[]},
-        {id:uid(),emoji:"♿",label:"Wheelchair",speak:"Can you help me into my wheelchair?",color:"#4a8fb0",children:[]},
-        {id:uid(),emoji:"🛋️",label:"Recliner",speak:"I'd like to sit in the recliner",color:"#9b5b4c",children:[]}
-      ]},
-      {id:uid(),emoji:"🥶",label:"Cold",speak:"I'm cold",color:"#5b6bbf",children:[]},
-      {id:uid(),emoji:"🥵",label:"Warm",speak:"I'm too warm",color:"#c2683b",children:[]},
-      {id:uid(),emoji:"😴",label:"Nap/Sleep",speak:"I'd like to take a nap",color:"#6a6f8c",children:[]},
-      {id:uid(),emoji:"🚻",label:"Bathroom",speak:"I need the bathroom",color:"#4a8fb0",children:[]},
-      {id:uid(),emoji:"🤝",label:"Hold my hand",speak:"Will you hold my hand?",color:"#a14e72",children:[]},
-      {id:uid(),emoji:"💬",label:"Stay with me",speak:"Please stay with me",color:"#3b7d6e",children:[]},
-      {id:uid(),emoji:"🎵",label:"Music",speak:"Can we listen to music?",color:"#b8843a",children:[]},
-      {id:uid(),emoji:"📺",label:"TV",speak:"Can we watch TV?",color:"#4a8fb0",children:[]},
-      {id:uid(),emoji:"💗",label:"Scared",speak:"I'm feeling scared",color:"#9b5b4c",children:[]},
-      {id:uid(),emoji:"🙂",label:"I'm okay",speak:"I'm okay",color:"#7a8a3a",children:[]},
-      {id:uid(),emoji:"✅",label:"All done",speak:"I'm all done",color:"#3b7d6e",children:[]},
-      {id:uid(),emoji:"🏖️",label:"Beach",speak:"Can we go to the beach?",color:"#4a8fb0",children:[]},
-      {id:uid(),emoji:"💭",label:"I'm feeling",speak:"I'm feeling",color:"#5b6bbf",children:[
-        {id:uid(),emoji:"😄",label:"That's funny",speak:"That's funny!",color:"#b8843a",children:[]},
-        {id:uid(),emoji:"🤢",label:"Sick",speak:"I feel sick",color:"#7a8a3a",children:[]},
-        {id:uid(),emoji:"😴",label:"Tired",speak:"I'm tired",color:"#6a6f8c",children:[]}
-      ]},
-      {id:uid(),emoji:"🗣️",label:"Words",speak:"Words",color:"#6a6f8c",children:[
-        {id:uid(),emoji:"👨",label:"Husband",speak:"Husband",color:"#4a8fb0",children:[]},
-        {id:uid(),emoji:"👩",label:"Wife",speak:"Wife",color:"#a14e72",children:[]},
-        {id:uid(),emoji:"🐦",label:"Hummingbird",speak:"Hummingbird",color:"#7a8a3a",children:[]}
+      {id:uid(),emoji:"➕",label:"More",speak:"I have something else to say.",color:"#b8843a",children:[
+        {id:uid(),emoji:"🙏",label:"Thank you",speak:"Thank you. I really appreciate your help.",color:"#b8843a",children:[]},
+        {id:uid(),emoji:"💬",label:"Stay with me",speak:"Would you please stay with me for a little while?",color:"#3b7d6e",children:[]},
+        {id:uid(),emoji:"✅",label:"All done",speak:"I'm all done, thank you.",color:"#3b7d6e",children:[]},
+        {id:uid(),emoji:"❤️",label:"I love you",speak:"I love you.",color:"#a14e72",children:[]}
       ]}
     ]
   };

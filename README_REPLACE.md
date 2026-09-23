@@ -1,12 +1,9 @@
-# Lori's Voice — Build 21 replacement files
+# Lori's Voice Build 22
 
-Replace only these files in the repository:
-
+Replace only:
 - `App/Web/index.html`
-- `project.yml`
+- root `project.yml`
 
-## Build 21 change
+This build replaces the starter board with 8 general-purpose starter tiles and a smaller set of polite, friendly sub-tiles that demonstrate how categories work.
 
-Adds a **Tile icon size** accessibility slider under Settings. The range is 100%–175% in 5% steps. It enlarges both emoji/symbol icons and uploaded tile photos. The renderer applies compact-screen caps so larger icons do not crowd out the tile label on smaller/landscape screens.
-
-No speech, photo-save, sub-tile, PIN, or board persistence logic was changed.
+Existing users who already have saved board data will keep their current board. To see the new starter board on an existing installation, use **Reset to the starter board** in Settings. New installations will start with the new board automatically.
