@@ -1,19 +1,19 @@
-# Lori's Voice Build 13 - Speaking Speed Fix
+# Lori's Voice Build 14 replacement files
 
-Replace exactly these files in GitHub:
+Replace these files in the repository:
 
-1. `App/SpeechController.swift`
-2. `App/Web/index.html`
-3. root `project.yml`
+- `App/BoardStore.swift`
+- `App/SpeechController.swift`
+- `App/Web/index.html`
+- `project.yml`
 
-Do not replace any other files.
+## Build 14 changes
 
-## What changed
-- Native iOS speech now uses three clearly separated AVSpeechSynthesizer rates:
-  - Very slow: 0.30
-  - Slower: 0.40
-  - Normal: 0.52
-- Tapping a speed setting immediately speaks: "This is the selected speaking speed."
-- The selected speed button is visibly highlighted.
-- Speed buttons expose `aria-pressed` state for accessibility.
-- Build number is 13.
+- Renames speaking speeds to **Slow / Normal / Fast** without changing the rates that were working in Build 13.
+- Keeps the immediate spoken speed preview.
+- Moves persisted tile photos out of `board.json` into `Application Support/LorisVoice/Photos`.
+- Existing Base64 photos migrate automatically the next time the board is saved.
+- Board backups remain self-contained because photos are hydrated back into the in-memory board as data URLs.
+- Keeps the prior-board recovery copy and retains photos referenced by that recovery copy.
+
+No PIN timeout or automatic communication-board lock has been added.

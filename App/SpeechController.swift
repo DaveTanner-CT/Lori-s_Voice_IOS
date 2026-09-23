@@ -49,11 +49,11 @@ final class SpeechController {
         // The HTML stores 0.62 / 0.74 / 0.92 for backward compatibility with
         // existing saved boards, but native iOS speech uses these fixed AVSpeech rates.
         if webRate < 0.69 {
-            return 0.30   // Very slow
+            return 0.30   // Slow
         }
         if webRate < 0.85 {
-            return 0.40   // Slower
+            return 0.40   // Normal
         }
-        return 0.52       // Normal
+        return 0.52       // Fast
     }
 }
