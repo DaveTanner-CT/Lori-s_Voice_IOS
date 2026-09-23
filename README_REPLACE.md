@@ -1,10 +1,18 @@
-# Lori's Voice - Build 17 replacement files
+# Lori's Voice - Build 18 replacement files
 
 Replace only these files in the repository:
 
-- `App/Web/index.html`
-- `project.yml`
+1. `App/Web/index.html`
+2. `project.yml`
 
-Build 17 fixes the Add Sub-tile save workflow. After a successful native save, **Save sub-tile** now closes the tile editor completely and returns to the communication board. It no longer switches silently back to the parent tile editor, which made the photo preview appear to disappear and left users unsure what to do next.
+Build 18 fixes two related sub-tile interaction bugs:
 
-No PIN, locking, speech, or storage format behavior was changed in this build.
+- The tap debounce now applies only to repeated taps on the same tile. Opening a parent tile no longer causes the first tap on a sub-tile to be ignored.
+- The delayed parent "speaking" render no longer rebuilds the newly opened sub-board. This prevents a newly uploaded sub-tile image from being briefly replaced/interrupted before it finishes displaying.
+
+Expected behavior:
+
+- Save a new sub-tile with a photo.
+- Open the parent tile.
+- The sub-tile photo should be visible immediately.
+- The first tap on the sub-tile should speak immediately.

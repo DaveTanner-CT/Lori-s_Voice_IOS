@@ -842,22 +842,49 @@ function tileUnder(x,y,exclude){
 }
 
 /* ---------------- interactions ---------------- */
-var lastTap=0;
+var lastTap=0, lastTapTileId=null;
 function onTile(tile, arr, index){
   if(admin){ openTop(tile, arr, index); return; }
+
+  // Debounce only a repeat tap on the SAME tile. The old global debounce also
+  // blocked the first tap on a newly opened sub-tile if it happened soon after
+  // tapping the parent tile. That made the first sub-tile tap appear dead.
   var now=Date.now();
-  if(now-lastTap<500) return;   // debounce: a tremor won't fire twice
+  if(lastTapTileId===tile.id && now-lastTap<500) return;
   lastTap=now;
+  lastTapTileId=tile.id;
+
   speak(tile.speak || tile.label);
-  // flash speaking ring
-  tile.speaking=true; render();
-  setTimeout(function(){ tile.speaking=false;
-    var b=currentBoard().arr; // re-render only if still on same board
-    render();
-  }, 900);
-  if(tile.children && tile.children.length){
-    setTimeout(function(){ pageStack.push(page); path.push(tile.id); page=0; render(); }, 380);
+  tile.speaking=true;
+  render();
+
+  var opensSubBoard=!!(tile.children && tile.children.length);
+  var movedIntoSubBoard=false;
+
+  if(opensSubBoard){
+    setTimeout(function(){
+      // Clear the parent speaking state BEFORE rendering the child board.
+      // This avoids a second delayed parent render replacing the just-created
+      // child DOM, which could interrupt a newly added photo while it decodes.
+      movedIntoSubBoard=true;
+      tile.speaking=false;
+      pageStack.push(page);
+      path.push(tile.id);
+      page=0;
+
+      // A different sub-tile should always respond on its first tap.
+      lastTap=0;
+      lastTapTileId=null;
+      render();
+    }, 380);
   }
+
+  setTimeout(function(){
+    tile.speaking=false;
+    // If we already entered the sub-board, do not destroy and rebuild that DOM
+    // again. This keeps photo tiles visible immediately on first display.
+    if(!movedIntoSubBoard) render();
+  }, 900);
 }
 
 document.getElementById("back").onclick=function(){ path.pop(); page=pageStack.pop()||0; render(); };
