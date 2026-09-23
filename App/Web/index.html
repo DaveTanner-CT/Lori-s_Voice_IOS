@@ -243,6 +243,12 @@
   .kbkey.space{flex:4 1 0;font-size:clamp(15px,2.6vw,22px);color:var(--muted);}
 .helpsec{font-size:14.5px;line-height:1.5;color:#3a382f;margin-bottom:12px;}
   .helpsec b{color:var(--ink);}
+  .info-card{background:#faf8f3;border:1px solid var(--line);border-radius:16px;padding:14px 15px;margin:10px 0 14px;}
+  .info-card h3{margin:0 0 9px;font-size:16px;color:var(--ink);}
+  .info-grid{display:grid;grid-template-columns:auto 1fr;gap:7px 12px;font-size:14px;line-height:1.4;}
+  .info-grid .k{font-weight:800;color:var(--muted);}
+  .info-grid .v{font-weight:700;color:var(--ink);min-width:0;overflow-wrap:anywhere;}
+  .info-note{font-size:13px;line-height:1.45;color:var(--muted);margin-top:8px;}
   .info-footer{border-top:1px solid var(--line);margin-top:4px;padding-top:14px;}
   .info-footer .credit{font-size:13px;color:var(--muted);line-height:1.55;}
   .info-footer .credit a{color:var(--accent);font-weight:700;text-decoration:none;}
@@ -400,13 +406,30 @@
 <div class="scrim" id="infoScrim">
   <div class="sheet">
     <h2>Help &amp; Info</h2>
-    <div class="helpsec"><b>Talking:</b> Tap any tile to say it out loud. A tile with a small number badge opens more choices inside it. Swipe left/right — or use the ‹ › arrows — for more pages. Tap the dark top bar to repeat the last phrase.</div>
-    <div class="helpsec"><b>Typing:</b> Tap <b>⌨️ Type</b> at the top to open the keyboard, type a message, and tap <b>🔊 Speak</b>.</div>
-    <div class="helpsec"><b>Editing the board:</b> Tap the <b>🔓 lock</b> and enter the edit PIN. In edit mode you can add a tile (the dashed <b>＋ Add tile</b>), edit a tile (the <b>✏️</b> on each one), drag tiles to reorder, add sub-tiles inside a tile, and delete tiles. Tap the lock again to leave edit mode. The communication board itself never requires a PIN and remains immediately available whenever the app opens.</div>
-    <div class="helpsec"><b>Settings (⚙️, in edit mode):</b> Change the board name, the greeting name, the color theme, tiles per page, the voice and speaking speed, and back up or restore the board.</div>
-    <div class="helpsec"><b>Natural voice on iPad:</b> Settings → Accessibility → Spoken Content → Voices → download an “Enhanced” voice, then choose it in ⚙️ → Voice.</div>
-    <div class="helpsec"><b>Backup / copy to another device:</b> ⚙️ → “Save board to a file”, then “Load board from a file” on the other device.</div>
-    <div class="helpsec" id="appDiagnostics"><b>App:</b> Lori's Voice</div>
+
+    <div class="info-card">
+      <h3>Quick help</h3>
+      <div class="helpsec"><b>Talk:</b> Tap a tile once to speak. A numbered tile opens more choices. Tap the dark phrase bar to repeat the last phrase.</div>
+      <div class="helpsec"><b>Type:</b> Tap <b>⌨️ Type</b>, enter a message, then tap <b>🔊 Speak</b>.</div>
+      <div class="helpsec"><b>More pages:</b> Swipe left/right or use the ‹ › arrows.</div>
+    </div>
+
+    <div class="info-card">
+      <h3>Caregiver / editor help</h3>
+      <div class="helpsec"><b>Edit the board:</b> Tap the <b>🔓 lock</b> and enter the edit PIN. You can add, edit, reorder, or delete tiles and add sub-tiles. Tap the lock again to leave edit mode.</div>
+      <div class="helpsec"><b>Settings:</b> In edit mode, tap <b>⚙️</b> to change the board name, greeting, greeting icon, color theme, tiles per page, voice, speaking speed, and backup/restore options.</div>
+      <div class="helpsec"><b>Natural voice:</b> On iPad, go to Settings → Accessibility → Spoken Content → Voices, download an Enhanced voice, then select it in Lori's Voice Settings.</div>
+      <div class="helpsec"><b>Important:</b> The communication board itself never requires a PIN and is immediately available whenever the app opens.</div>
+    </div>
+
+    <div class="info-card">
+      <h3>App &amp; storage</h3>
+      <div class="info-grid" id="appDiagnostics">
+        <div class="k">App</div><div class="v">Lori's Voice</div>
+        <div class="k">Storage</div><div class="v">On this device</div>
+      </div>
+      <div class="info-note">Board changes and photos are kept in the app's private local storage. Use Settings → Save board to a file to keep a separate backup.</div>
+    </div>
 
     <div class="field">
       <label>Edit PIN</label>
@@ -422,8 +445,10 @@
 
     <div class="info-footer">
       <div class="credit">
-        Lori's Voice, developed by Dave Tanner &nbsp;|&nbsp;
-        <a href="https://www.scriptingforschools.org" target="_blank" rel="noopener">www.scriptingforschools.org</a>
+        <b>Support:</b> Scripting for Schools<br>
+        <a href="mailto:davetanner@scriptingforschools.org">davetanner@scriptingforschools.org</a> &nbsp;·&nbsp;
+        <a href="https://www.scriptingforschools.org" target="_blank" rel="noopener">www.scriptingforschools.org</a><br>
+        <span style="font-size:12px;">Lori's Voice, developed by Dave Tanner</span>
       </div>
       <button class="linklike" id="privacyLink">Data &amp; Privacy</button>
     </div>
@@ -436,11 +461,12 @@
 <div class="scrim" id="privacyScrim">
   <div class="sheet">
     <h2>Data &amp; Privacy</h2>
-    <div class="helpsec"><b>Where your changes are saved.</b> Everything you set up — your tiles and words, the board name, the greeting, colors, voice, speaking speed, PIN, and notes — is saved locally on this device. It is not uploaded to a Lori's Voice server.</div>
-    <div class="helpsec"><b>Nothing is sent automatically.</b> There is no account and no sign-in. Lori's Voice does not upload your board, your words, or anything you type to a Lori's Voice server. There is no tracking and no advertising. A backup is shared only when you choose a destination for it.</div>
-    <div class="helpsec"><b>Speaking.</b> When you tap a tile or use the keyboard, the app uses your device's own built-in voice to say the words out loud. What you tap or type is not saved after it is spoken.</div>
-    <div class="helpsec"><b>Keep a backup.</b> Because everything lives on this one device, it is a good idea to keep a copy. In Settings, tap “Save board to a file.” If the device is reset, its local site/app data is cleared, or the installed app is removed, the saved board can be lost — a backup lets you restore it, or copy it to another device with “Load board from a file.”</div>
-    <div class="helpsec"><b>Each device is separate.</b> Every device keeps its own copy. To use the same board on another device, save it to a file here and load that file there.</div>
+    <div class="helpsec"><b>Where your changes are saved.</b> Your board, tiles, words, photos, greeting, colors, voice, speaking speed, PIN, and device notes are stored in Lori's Voice's private local storage on this device. They are not uploaded to a Lori's Voice server.</div>
+    <div class="helpsec"><b>No account, tracking, or advertising.</b> Lori's Voice does not require an account or sign-in and does not send your board or typed messages to a Lori's Voice server. The app does not include advertising or analytics tracking.</div>
+    <div class="helpsec"><b>Speaking stays on the device.</b> Lori's Voice uses the device's built-in speech system. A message typed in Type to Talk is used for speaking and is not added to the communication board unless you separately create a tile for it.</div>
+    <div class="helpsec"><b>Backups are user-controlled.</b> A backup is created only when you choose “Save board to a file.” You decide where that file is saved or shared. Restoring a backup happens only when you choose “Load board from a file.”</div>
+    <div class="helpsec"><b>Keep a backup.</b> If the app is deleted, the device is erased, or local app data is lost, the board may be lost too. A saved backup lets you restore the board or copy it to another device.</div>
+    <div class="helpsec"><b>Each device is separate.</b> Lori's Voice does not automatically sync boards between devices.</div>
     <button class="btn ghost" id="closePrivacy">Close</button>
   </div>
 </div>
@@ -1262,9 +1288,20 @@ document.getElementById("infoBtn").onclick=function(){
   var ni=window.__LORIS_NATIVE_INFO__||{};
   var diag=document.getElementById("appDiagnostics");
   if(diag){
-    var ver=ni.version||"Web"; var build=ni.build?" (build "+ni.build+")":"";
-    var storage=ni.storage||"This browser";
-    diag.innerHTML="<b>App:</b> Lori's Voice "+escapeHtml(ver)+escapeHtml(build)+" &nbsp;·&nbsp; <b>Storage:</b> "+escapeHtml(storage);
+    var ver=ni.version||"Web";
+    var build=ni.build||"—";
+    var storage=ni.storage||"On this device";
+    var voice=getSelectedVoice();
+    var voiceName=(voice&&voice.name)?voice.name:"System voice";
+    var speedLabel=model.rate==="slow"?"Slow":(model.rate==="fast"?"Fast":"Normal");
+    var lastBackup=model.lastBackupAt?new Date(model.lastBackupAt).toLocaleString():"Not recorded";
+    diag.innerHTML=
+      '<div class="k">Version</div><div class="v">'+escapeHtml(ver)+'</div>'+
+      '<div class="k">Build</div><div class="v">'+escapeHtml(build)+'</div>'+
+      '<div class="k">Storage</div><div class="v">'+escapeHtml(storage)+'</div>'+
+      '<div class="k">Voice</div><div class="v">'+escapeHtml(voiceName)+'</div>'+
+      '<div class="k">Speed</div><div class="v">'+escapeHtml(speedLabel)+'</div>'+
+      '<div class="k">Last backup</div><div class="v">'+escapeHtml(lastBackup)+'</div>';
   }
   var notes=document.getElementById("infoNotes");
   notes.value=model.infoNotes||"";
@@ -1309,6 +1346,8 @@ function extractBackupModel(parsed){
   throw new Error("The selected file is not a valid Lori's Voice backup.");
 }
 document.getElementById("exportBtn").onclick=function(){
+  model.lastBackupAt=new Date().toISOString();
+  save();
   var filename=(model.title||"Loris_Voice").replace(/[^a-z0-9_-]+/gi,"_")+"_backup.json";
   var json=JSON.stringify(backupEnvelope(),null,2);
   if(NATIVE_IOS){ nativePost({action:"exportBoard", json:json, filename:filename}); return; }

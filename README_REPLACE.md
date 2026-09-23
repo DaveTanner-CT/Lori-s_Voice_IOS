@@ -1,12 +1,16 @@
-# Lori's Voice Build 19
+# Lori's Voice Build 20
 
-Replace only:
+Replace only these files in the repository:
+
 - `App/Web/index.html`
-- root `project.yml`
+- `project.yml`
+
+Build 20 polishes Help & Info without changing board, tile, photo, speech, or save behavior.
 
 Changes:
-- Adds an editable Greeting icon setting with common emoji choices, a None option, and a custom emoji/text field.
-- Greeting updates immediately when the icon changes.
-- Fixes Tiles per page visual state so 6 tiles / 4 bigger clearly shows which option is selected.
-- Adds aria-pressed state and a confirmation toast for tile count changes.
-- Build number bumped to 19.
+- reorganized Help & Info into Quick help, Caregiver/editor help, and App & storage sections
+- added version/build, local storage, selected voice, speaking speed, and last-backup diagnostics
+- records the last backup time when Save board to a file is used
+- added Scripting for Schools support email and website
+- updated in-app privacy language to describe native private local storage and local photo storage accurately
+- retains immediate access to the communication board with no automatic PIN/lock behavior
