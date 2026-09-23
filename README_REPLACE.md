@@ -1,13 +1,10 @@
-Lori's Voice iOS - v8 replacement files
+Lori's Voice v10 replacement files
 
-Replace these files/folders in GitHub:
+Replace these files in the GitHub repository:
+1. /project.yml -> project.yml
+2. /codemagic.yaml -> codemagic.yaml
+3. /App/Info.plist -> Info.plist in this package (optional if your current App/Info.plist already matches v8/v9)
 
-1. root/project.yml
-2. root/codemagic.yaml
-3. App/Info.plist
-4. App/LegacyIcons/ (keep/replace with the folder included here)
-5. App/Assets.xcassets/AppIcon.appiconset/ (keep/replace with the folder included here)
+Do not move or rename App/LegacyIcons or App/Assets.xcassets.
 
-Do not add any of these folders at the repository root.
-
-The key v8 fix is a post-build Xcode script that explicitly copies the required loose iPhone/iPad icon PNG files into the root of the finished .app bundle before signing/export. The Codemagic verifier then checks the finished IPA for the exact 120x120 and 152x152 PNGs and validates the code signature before publishing.
+The key v10 fix is that XcodeGen resources are declared inside `sources:` with `buildPhase: resources`. The prior `resources:` block was not creating the expected Copy Bundle Resources entries for the legacy icon PNG files.

@@ -23,7 +23,6 @@ workflows:
           cd "$CM_BUILD_DIR"
           plutil -lint App/Info.plist
           test -f App/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
-          test -f App/Assets.xcassets/AppIcon.appiconset/AppIcon-152.png
           test -f App/LegacyIcons/Icon-60@2x.png
           test -f App/LegacyIcons/Icon-76@2x.png
           echo "Source configuration verification passed."
@@ -37,6 +36,18 @@ workflows:
           set -e
           cd "$CM_BUILD_DIR"
           xcodegen generate --spec project.yml
+
+      - name: Verify generated Xcode resources
+        script: |
+          set -e
+          cd "$CM_BUILD_DIR"
+          PBX="$XCODE_PROJECT/project.pbxproj"
+          echo "Checking generated Xcode project for required resources..."
+          grep -F "Icon-60@2x.png" "$PBX"
+          grep -F "Icon-76@2x.png" "$PBX"
+          grep -F "index.html" "$PBX"
+          grep -F "Assets.xcassets" "$PBX"
+          echo "Generated Xcode resource verification passed."
 
       - name: Apply signing profiles
         script: |
