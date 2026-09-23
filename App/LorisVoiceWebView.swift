@@ -123,7 +123,17 @@ struct LorisVoiceWebView: UIViewRepresentable {
             switch action {
             case "saveModel":
                 guard let json = body["json"] as? String else { return }
-                try? BoardStore.shared.save(json: json)
+                let requestId = body["requestId"] as? String
+                do {
+                    try BoardStore.shared.save(json: json)
+                    if let requestId {
+                        completeSave(requestId: requestId, ok: true, message: "")
+                    }
+                } catch {
+                    if let requestId {
+                        completeSave(requestId: requestId, ok: false, message: error.localizedDescription)
+                    }
+                }
 
             case "speak":
                 guard let text = body["text"] as? String else { return }
@@ -255,6 +265,15 @@ struct LorisVoiceWebView: UIViewRepresentable {
                 DispatchQueue.main.async {
                     self?.webView?.evaluateJavaScript("window.nativePhotoSelected(\(literal));")
                 }
+            }
+        }
+
+        private func completeSave(requestId: String, ok: Bool, message: String) {
+            guard let requestLiteral = LorisVoiceWebView.javaScriptStringLiteral(requestId),
+                  let messageLiteral = LorisVoiceWebView.javaScriptStringLiteral(message) else { return }
+            let script = "window.nativeSaveCompleted(\(requestLiteral), \(ok ? "true" : "false"), \(messageLiteral));"
+            DispatchQueue.main.async { [weak self] in
+                self?.webView?.evaluateJavaScript(script)
             }
         }
 

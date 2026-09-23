@@ -546,11 +546,34 @@ function nativePost(payload){
   if(!NATIVE_IOS) return false;
   try{ window.webkit.messageHandlers.lorisVoice.postMessage(payload); return true; }catch(e){ return false; }
 }
-function save(){
+var nativeSaveSeq=0;
+var nativeSaveCallbacks={};
+function save(onComplete){
   var json=JSON.stringify(model);
   try{ localStorage.setItem(KEY, json); }catch(e){ mem=json; }
-  if(NATIVE_IOS) nativePost({action:"saveModel", json:json});
+
+  if(NATIVE_IOS){
+    if(typeof onComplete === "function"){
+      var requestId="save-"+(++nativeSaveSeq);
+      nativeSaveCallbacks[requestId]=onComplete;
+      if(!nativePost({action:"saveModel", json:json, requestId:requestId})){
+        delete nativeSaveCallbacks[requestId];
+        onComplete(false,"The app could not start the save.");
+      }
+    }else{
+      nativePost({action:"saveModel", json:json});
+    }
+    return;
+  }
+
+  if(typeof onComplete === "function") onComplete(true,"");
 }
+window.nativeSaveCompleted=function(requestId, ok, message){
+  var cb=nativeSaveCallbacks[requestId];
+  if(!cb) return;
+  delete nativeSaveCallbacks[requestId];
+  cb(!!ok, message||"");
+};
 function load(){
   if(window.__LORIS_NATIVE_MODEL__ && window.__LORIS_NATIVE_MODEL__.tiles){
     return window.__LORIS_NATIVE_MODEL__;
@@ -889,8 +912,13 @@ function openEditor(tile, arr, index){ editStack.push({tile:tile, arr:arr, index
 function showEditor(){
   var ctx=editStack[editStack.length-1];
   editing=ctx; var tile=ctx.tile;
-  document.getElementById("editBack").style.display = editStack.length>1 ? "block" : "none";
-  document.getElementById("editTitle").textContent = tile.label ? "Edit “"+tile.label+"”" : "New tile";
+  var isSubTile=editStack.length>1;
+  document.getElementById("editBack").style.display = isSubTile ? "block" : "none";
+  document.getElementById("editTitle").textContent = tile.label ? "Edit “"+tile.label+"”" : (isSubTile ? "New sub-tile" : "New tile");
+  var doneBtn=document.getElementById("doneTile");
+  doneBtn.disabled=false;
+  doneBtn.classList.remove("saving");
+  doneBtn.textContent=isSubTile ? "Save sub-tile" : "Done";
   document.getElementById("fEmoji").value=tile.emoji||"";
   document.getElementById("fLabel").value=tile.label||"";
   document.getElementById("fSpeak").value=tile.speak||"";
@@ -973,11 +1001,20 @@ document.getElementById("tilePhotoInput").onchange=function(e){
 };
 function applySelectedPhoto(dataUrl){
   if(!editing || !editing.tile || !dataUrl) return;
-  editing.tile.image=dataUrl; save();
+  editing.tile.image=dataUrl;
   var tpw=document.getElementById("tilePhotoWrap"), tpp=document.getElementById("tilePhotoPreview");
   tpp.src=dataUrl; tpw.style.display="block";
+  renderForks();
   render();
-  showSaveToast("Photo added and saved ✓");
+  showSaveToast("Photo added — saving…");
+  save(function(ok, message){
+    if(ok){
+      showSaveToast("Photo saved ✓");
+    }else{
+      showSaveToast("Photo not saved — try again");
+      if(message) console.error(message);
+    }
+  });
 }
 window.nativePhotoSelected=function(dataUrl){ applySelectedPhoto(dataUrl); };
 document.getElementById("tilePhotoRemove").onclick=function(){
@@ -1011,20 +1048,43 @@ document.getElementById("delTile").onclick=function(){
     else { document.getElementById("editScrim").classList.remove("show"); render(); }
   });
 };
+function commitEditorFields(){
+  if(!editing || !editing.tile) return;
+  editing.tile.emoji=document.getElementById("fEmoji").value;
+  editing.tile.label=document.getElementById("fLabel").value;
+  editing.tile.speak=document.getElementById("fSpeak").value;
+}
 document.getElementById("doneTile").onclick=function(){
   var btn=this;
   var isSubTile=editStack.length>1;
+  commitEditorFields();
   btn.disabled=true;
   btn.classList.add("saving");
-  btn.textContent="Saved ✓";
-  save();
-  setTimeout(function(){
-    backOrClose();
-    showSaveToast(isSubTile ? "Sub-tile saved ✓" : "Tile saved ✓");
-    btn.disabled=false;
-    btn.classList.remove("saving");
-    btn.textContent="Done";
-  }, 450);
+  btn.textContent="Saving…";
+
+  save(function(ok, message){
+    if(!ok){
+      btn.disabled=false;
+      btn.classList.remove("saving");
+      btn.textContent=isSubTile ? "Save sub-tile" : "Done";
+      showSaveToast("Could not save — please try again");
+      if(message) console.error(message);
+      return;
+    }
+
+    // The native board file is confirmed written before we leave this editor.
+    editStack.pop();
+    if(editStack.length){
+      showEditor();
+      renderForks();
+      showSaveToast("Sub-tile saved ✓");
+    }else{
+      editing=null;
+      document.getElementById("editScrim").classList.remove("show");
+      render();
+      showSaveToast("Tile saved ✓");
+    }
+  });
 };
 
 /* ---------------- settings ---------------- */
