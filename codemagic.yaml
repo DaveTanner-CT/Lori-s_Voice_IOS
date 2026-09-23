@@ -95,7 +95,8 @@ workflows:
           test -f "$APP/Assets.car"
           echo "Assets.car is present."
 
-          codesign --verify --deep --strict "$APP"
+          echo "Checking final app code signature..."
+          codesign --verify --deep --strict --verbose=2 "$APP"
           echo "Code signature verification passed."
           echo "Packaged icon verification passed."
 
