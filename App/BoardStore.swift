@@ -1,5 +1,16 @@
 import Foundation
 
+enum BoardStoreError: LocalizedError {
+    case invalidBoardData
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidBoardData:
+            return "The board data could not be saved because it is not valid Lori's Voice board data."
+        }
+    }
+}
+
 final class BoardStore {
     static let shared = BoardStore()
 
@@ -38,7 +49,7 @@ final class BoardStore {
 
         guard Self.looksLikeBoardJSON(json),
               let data = json.data(using: .utf8) else {
-            throw CocoaError(.fileWriteCorruptFile)
+            throw BoardStoreError.invalidBoardData
         }
 
         // Preserve the last good board before replacing it. This is intentionally
