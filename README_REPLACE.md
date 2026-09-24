@@ -1,9 +1,12 @@
-# Lori's Voice Build 22
+# Lori's Voice — Build 23
 
-Replace only:
+This build cleans up the starter-board spoken phrases so polite requests sound more natural.
+
+## Replace only
 - `App/Web/index.html`
 - root `project.yml`
 
-This build replaces the starter board with 8 general-purpose starter tiles and a smaller set of polite, friendly sub-tiles that demonstrate how categories work.
-
-Existing users who already have saved board data will keep their current board. To see the new starter board on an existing installation, use **Reset to the starter board** in Settings. New installations will start with the new board automatically.
+## Changes
+- Removed awkward sentence-ending “please” from starter phrases.
+- Kept naturally placed polite wording such as “Could you please help me?” where it reads well.
+- Build number updated to 23.
