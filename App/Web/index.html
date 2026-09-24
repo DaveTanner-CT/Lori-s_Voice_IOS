@@ -1300,31 +1300,36 @@ function buildThemeSwatches(){
 document.getElementById("closeMenu").onclick=function(){ document.getElementById("menuScrim").classList.remove("show"); };
 document.getElementById("fPin").oninput=function(){ this.value=this.value.replace(/[^0-9]/g,""); model.pin=this.value; save(); };
 document.getElementById("infoBtn").onclick=function(){
-  var ni=window.__LORIS_NATIVE_INFO__||{};
-  var diag=document.getElementById("appDiagnostics");
-  if(diag){
-    var ver=ni.version||"Web";
-    var build=ni.build||"—";
-    var storage=ni.storage||"On this device";
-    var voice=getSelectedVoice();
-    var voiceName=(voice&&voice.name)?voice.name:"System voice";
-    var speedLabel=model.rate==="slow"?"Slow":(model.rate==="fast"?"Fast":"Normal");
-    var lastBackup=model.lastBackupAt?new Date(model.lastBackupAt).toLocaleString():"Not recorded";
-    diag.innerHTML=
-      '<div class="k">Version</div><div class="v">'+escapeHtml(ver)+'</div>'+
-      '<div class="k">Build</div><div class="v">'+escapeHtml(build)+'</div>'+
-      '<div class="k">Storage</div><div class="v">'+escapeHtml(storage)+'</div>'+
-      '<div class="k">Voice</div><div class="v">'+escapeHtml(voiceName)+'</div>'+
-      '<div class="k">Speed</div><div class="v">'+escapeHtml(speedLabel)+'</div>'+
-      '<div class="k">Last backup</div><div class="v">'+escapeHtml(lastBackup)+'</div>';
-  }
-  var notes=document.getElementById("infoNotes");
-  notes.value=model.infoNotes||"";
-  notes.readOnly=!admin;
-  document.getElementById("infoNotesHint").style.display=admin?"none":"block";
-  var pr=document.getElementById("pinReveal"); pr.style.display="none"; pr.textContent="";
-  document.getElementById("revealPin").style.display="inline-block";
+  // Open the panel first. Diagnostics should never be able to block Help & Info.
   document.getElementById("infoScrim").classList.add("show");
+  try{
+    var ni=window.__LORIS_NATIVE_INFO__||{};
+    var diag=document.getElementById("appDiagnostics");
+    if(diag){
+      var ver=ni.version||"Web";
+      var build=ni.build||"—";
+      var storage=ni.storage||"On this device";
+      var voice=currentVoice();
+      var voiceName=(voice&&voice.name)?voice.name:"System voice";
+      var speedLabel=model.rate==="slow"?"Slow":(model.rate==="fast"?"Fast":"Normal");
+      var lastBackup=model.lastBackupAt?new Date(model.lastBackupAt).toLocaleString():"Not recorded";
+      diag.innerHTML=
+        '<div class="k">Version</div><div class="v">'+escapeHtml(ver)+'</div>'+
+        '<div class="k">Build</div><div class="v">'+escapeHtml(build)+'</div>'+
+        '<div class="k">Storage</div><div class="v">'+escapeHtml(storage)+'</div>'+
+        '<div class="k">Voice</div><div class="v">'+escapeHtml(voiceName)+'</div>'+
+        '<div class="k">Speed</div><div class="v">'+escapeHtml(speedLabel)+'</div>'+
+        '<div class="k">Last backup</div><div class="v">'+escapeHtml(lastBackup)+'</div>';
+    }
+    var notes=document.getElementById("infoNotes");
+    notes.value=model.infoNotes||"";
+    notes.readOnly=!admin;
+    document.getElementById("infoNotesHint").style.display=admin?"none":"block";
+    var pr=document.getElementById("pinReveal"); pr.style.display="none"; pr.textContent="";
+    document.getElementById("revealPin").style.display="inline-block";
+  }catch(e){
+    console.error("Unable to refresh Help & Info diagnostics",e);
+  }
 };
 document.getElementById("revealPin").onclick=function(){
   var pr=document.getElementById("pinReveal");

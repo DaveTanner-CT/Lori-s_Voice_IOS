@@ -1,12 +1,9 @@
-# Lori's Voice — Build 23
+# Lori's Voice Build 24
 
-This build cleans up the starter-board spoken phrases so polite requests sound more natural.
+Fixes the Help & Info button.
 
-## Replace only
+Replace only:
 - `App/Web/index.html`
 - root `project.yml`
 
-## Changes
-- Removed awkward sentence-ending “please” from starter phrases.
-- Kept naturally placed polite wording such as “Could you please help me?” where it reads well.
-- Build number updated to 23.
+The Info handler now uses the correct `currentVoice()` helper and opens the panel before refreshing diagnostics, so a diagnostics error cannot prevent Help & Info from opening.
