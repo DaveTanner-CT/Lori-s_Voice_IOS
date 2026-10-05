@@ -426,6 +426,7 @@
       <div class="helpsec"><b>Edit the board:</b> Tap the <b>🔓 lock</b> and enter the edit PIN. You can add, edit, reorder, or delete tiles and add sub-tiles. Tap the lock again to leave edit mode.</div>
       <div class="helpsec"><b>Settings:</b> In edit mode, tap <b>⚙️</b> to change the board name, greeting, greeting icon, color theme, tiles per page, tile icon size, voice, speaking speed, and backup/restore options.</div>
       <div class="helpsec"><b>Natural voice:</b> On iPad, go to Settings → Accessibility → Spoken Content → Voices, download an Enhanced voice, then select it in Lori's Voice Settings.</div>
+      <div class="helpsec"><b>Edit PIN:</b> The starting PIN is <b>1234</b>. It prevents accidental changes to the board and settings; it does not unlock paid content. Tap <b>Show edit PIN</b> below to see the current PIN. You can change it in Settings.</div>
       <div class="helpsec"><b>Important:</b> The communication board itself never requires a PIN and is immediately available whenever the app opens.</div>
     </div>
 
@@ -493,6 +494,7 @@
 <div class="scrim" id="pinScrim">
   <div class="sheet" style="max-width:300px;text-align:center;">
     <h2 style="font-size:18px;margin-bottom:8px;">Enter PIN to edit</h2>
+    <p style="font-size:14px;margin:0 0 14px;">For board editing only. No purchase required.<br>Starting PIN: 1234. Changed it? Cancel and open ⓘ → Show edit PIN.</p>
     <div id="pinDots" class="pindots"></div>
     <div class="keypad" id="keypad"></div>
     <button class="btn ghost" id="pinCancel" style="margin-top:16px;">Cancel</button>
@@ -666,7 +668,7 @@ function speak(text){
   window.lastPhrase=text;
   var v=currentVoice();
   if(NATIVE_IOS){
-    nativePost({
+    var sent=nativePost({
       action:"speak",
       text:text,
       rate:model.rate||0.9,
@@ -674,6 +676,7 @@ function speak(text){
       voiceName:(v&&v.name)||"",
       lang:(v&&v.lang)||"en-US"
     });
+    if(!sent){ alert("Speech could not start. Please close and reopen Lori’s Voice, then try again."); return; }
   } else {
     try{
       speechSynthesis.cancel();
@@ -1474,7 +1477,7 @@ function kbRender(){
 function kbInsert(ch){ kbText+=ch; kbRender(); }
 function kbBackspace(){ kbText=kbText.slice(0,-1); kbRender(); }
 function kbClear(){ kbText=""; kbRender(); }
-function kbSpeak(){ var t=kbText.trim(); if(t) speak(t); }
+function kbSpeak(){ var t=kbText.trim(); if(t) speak(t); else alert("Type a message using the letter buttons, then tap Speak."); }
 function kbReSpeak(){ var t=kbText.trim(); if(t) speak(t); }
 function buildKeys(){
   if(KB_BUILT) return; KB_BUILT=true;

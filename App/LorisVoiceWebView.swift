@@ -141,6 +141,9 @@ struct LorisVoiceWebView: UIViewRepresentable {
                 let voiceURI = body["voiceURI"] as? String
                 let voiceName = body["voiceName"] as? String
                 let lang = body["lang"] as? String
+                speech.onError = { [weak self] message in
+                    self?.showAlert(title: "Speech unavailable", message: message)
+                }
                 speech.speak(
                     text: text,
                     webRate: rate,

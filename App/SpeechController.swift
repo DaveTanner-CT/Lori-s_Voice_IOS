@@ -1,7 +1,16 @@
 import AVFoundation
 
-final class SpeechController {
+final class SpeechController: NSObject, AVSpeechSynthesizerDelegate {
     private let synthesizer = AVSpeechSynthesizer()
+
+    private var pendingStart: DispatchWorkItem?
+    private var currentUtterance: AVSpeechUtterance?
+    var onError: ((String) -> Void)?
+
+    override init() {
+        super.init()
+        synthesizer.delegate = self
+    }
 
     func speak(
         text: String,
@@ -12,6 +21,12 @@ final class SpeechController {
     ) {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
 
+        pendingStart?.cancel()
+        currentUtterance = nil
+        if synthesizer.isSpeaking || synthesizer.isPaused {
+            synthesizer.stopSpeaking(at: .immediate)
+        }
+
         do {
             let session = AVAudioSession.sharedInstance()
             // Playback keeps speech available even when the device's Ring/Silent switch
@@ -19,10 +34,9 @@ final class SpeechController {
             try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
             try session.setActive(true)
         } catch {
-            // Speech can still work if the audio session cannot be changed.
+            onError?("Audio could not start. Please try Speak again. (\(error.localizedDescription))")
+            return
         }
-
-        synthesizer.stopSpeaking(at: .immediate)
 
         let utterance = AVSpeechUtterance(string: text)
         utterance.pitchMultiplier = 1.0
@@ -41,7 +55,31 @@ final class SpeechController {
             utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
         }
 
+        currentUtterance = utterance
+        let timeout = DispatchWorkItem { [weak self, weak utterance] in
+            guard let self, let utterance, self.currentUtterance === utterance else { return }
+            self.currentUtterance = nil
+            self.synthesizer.stopSpeaking(at: .immediate)
+            self.onError?("Speech did not start. Please try again. If this continues, choose another voice in Settings.")
+        }
+        pendingStart = timeout
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10, execute: timeout)
         synthesizer.speak(utterance)
+    }
+
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.currentUtterance === utterance else { return }
+            self.pendingStart?.cancel()
+        }
+    }
+
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.currentUtterance === utterance else { return }
+            self.pendingStart?.cancel()
+            self.currentUtterance = nil
+        }
     }
 
     private static func nativeRate(fromWebRate webRate: Double) -> Float {
